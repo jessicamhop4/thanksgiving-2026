@@ -177,7 +177,7 @@ main { max-width: 1120px; margin: 0 auto; padding: 14px 16px calc(40px + var(--s
 .badge { font-size: 12px; font-weight: 600; padding: 4px 9px; border-radius: 999px; background: #E3EBDD; color: var(--forest-deep); }
 .badge.warn { background: #F6E1D6; color: #7A3412; }
 .badge.gray { background: var(--linen); color: var(--ink-soft); }
-.price-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 12px 0; }
+.price-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin: 12px 0; }
 .price-grid div { background: var(--cream); border-radius: 12px; padding: 8px 10px; }
 .price-grid small { display: block; font-size: 11px; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.05em; }
 .price-grid b { font-family: var(--serif); font-size: 19px; }

@@ -211,8 +211,8 @@
 
   function costRange(d) {
     if (!d.listings.length) return d.lodgingShort || "—";
-    const pp = d.listings.map((l) => l.total / 3);
-    const lo = Math.min(...pp), hi = Math.max(...pp);
+    const totals = d.listings.map((l) => l.total);
+    const lo = Math.min(...totals), hi = Math.max(...totals);
     return lo === hi ? money(lo) : `${money(lo)}–${money(hi)}`;
   }
 
@@ -403,7 +403,7 @@
         <div class="facts">
           <div class="fact"><small>${d.access.includes("drive") ? "From Kings Beach" : "Getting there"}</small><b>${esc(d.quick.travel)}</b></div>
           <div class="fact"><small>Late Nov</small><b>${esc(d.quick.weather)}</b></div>
-          <div class="fact"><small>Lodging / person</small><b>${esc(costRange(d))}</b></div>
+          <div class="fact"><small>Lodging · 3 nights</small><b>${esc(costRange(d))}</b></div>
         </div>
         <div class="card-actions">
           <button class="btn btn-on-photo" data-open="${d.id}">Explore</button>
@@ -639,7 +639,7 @@
   }
 
   function listingHTML(l, d) {
-    const perNight = l.total / 3, pp = l.total / 3;
+    const perNight = l.total / 3;
     return `<article class="listing">
       <div class="listing-photos">${l.photos.map((p, i) => `<figure><button style="all:unset;cursor:zoom-in;display:block" data-lb="L-${l.id}" data-i="${i}" aria-label="Open listing photo"><img loading="lazy" src="${esc(p.url)}" alt="${esc(p.caption || l.name)}" /></button>${p.caption ? `<figcaption>${esc(p.caption)}</figcaption>` : ""}</figure>`).join("")}</div>
       <div class="listing-body">
@@ -654,9 +654,8 @@
         <div class="price-grid">
           <div><small>3-night total</small><b>${money(l.total)}</b></div>
           <div><small>Avg / night</small><b>${money(perNight)}</b></div>
-          <div><small>Each person, whole stay</small><b>${money(pp)}</b></div>
         </div>
-        <p class="note" style="margin-top:-4px">Exact quote ${money2(l.total)} for Nov 24–27, 3 adults, split three ways. ${esc(TRIP.taxNote)}</p>
+        <p class="note" style="margin-top:-4px">Exact quote ${money2(l.total)} for Nov 24–27, 3 adults. ${esc(TRIP.taxNote)}</p>
         <dl class="kv">
           <dt>Sleeps</dt><dd>Up to ${l.guests} guests · ${esc(l.rooms)}</dd>
           <dt>Sleeping setup</dt><dd>${esc(l.sleeping)}</dd>
@@ -697,7 +696,7 @@
           <section class="section" id="s-stay"><h3>Where to stay</h3><div class="cols two">${d.stayAreas.map((a) => `<div class="box"><h4>${esc(a.name)}</h4><p style="margin:0">${esc(a.why)}</p></div>`).join("")}</div></section>
 
           <section class="section" id="s-travel"><h3>Getting there</h3>
-            ${t.drive ? `<div class="box" style="margin-bottom:12px"><h4>🚗 Driving from Kings Beach</h4><dl class="kv"><dt>Distance</dt><dd>${esc(t.drive.distance)}</dd><dt>Time</dt><dd>${esc(t.drive.time)}</dd><dt>Route</dt><dd>${esc(t.drive.route)}</dd></dl><p class="note" style="margin-bottom:0">${esc(t.drive.notes)}</p></div>` : ""}
+            ${t.drive ? `<div class="box" style="margin-bottom:12px"><h4>🚗 Dad's drive from Kings Beach</h4><dl class="kv"><dt>Distance</dt><dd>${esc(t.drive.distance)}</dd><dt>Time</dt><dd>${esc(t.drive.time)}</dd><dt>Route</dt><dd>${esc(t.drive.route)}</dd></dl><p class="note" style="margin-bottom:0">${esc(t.drive.notes)}</p></div>` : ""}
             ${t.flights?.length ? `<div class="box" style="margin-bottom:12px"><h4>✈️ Flying ${t.flightsFor ? esc(t.flightsFor) : ""}</h4>
               <div class="table-wrap" style="margin-top:6px;border-radius:12px"><table class="matrix flights" style="min-width:520px"><thead><tr><th>Route</th><th>Nonstop?</th><th>Flight time</th><th>On our dates</th></tr></thead><tbody>
               ${t.flights.map((f) => `<tr><td><b>${esc(f.route)}</b>${f.carriers ? `<br><span class="note">${esc(f.carriers)}</span>` : ""}</td><td data-l="Nonstop">${esc(f.nonstop)}</td><td data-l="Time">${esc(f.time)}</td><td data-l="Our dates" style="text-align:left">${esc(f.dates)}</td></tr>`).join("")}
@@ -721,7 +720,6 @@
 
           <section class="section" id="s-rentals"><h3>${d.listings.length ? "Verified rentals" : "Lodging"}</h3>
             ${d.listings.length ? `<p class="sub">Each was confirmed bookable for the full Tue–Fri stay for 3 adults in a live dated Airbnb search, which also enforces minimum-night rules. Prices are Airbnb's live quotes at check time and can change.</p>${d.listings.map((l) => listingHTML(l, d)).join("")}` : `<div class="box">${esc(d.lodgingNote)}</div>`}
-            ${d.inspiration?.length ? `<h4 style="margin:18px 0 8px">Inspiration only — not bookable for our dates</h4>${d.inspiration.map((x) => `<div class="box" style="margin-bottom:10px"><div class="badges" style="margin-bottom:6px"><span class="badge warn">${esc(x.status)}</span></div><b>${esc(x.name)}</b> <span class="note">· ${esc(x.summary)}</span><p class="note" style="margin:6px 0 4px">${esc(x.reason)}</p><a href="${esc(x.url)}" target="_blank" rel="noopener">Open listing ↗</a></div>`).join("")}` : ""}
           </section>
 
           <section class="section" id="s-rate"><h3>${STATIC ? "Your rating" : "Ratings"}</h3>
@@ -787,7 +785,7 @@
       mine: (a, b) => (myScore(b.d.id) ?? -1) - (myScore(a.d.id) ?? -1),
       avg: (a, b) => (b.st.avg ?? -1) - (a.st.avg ?? -1) || b.st.favs - a.st.favs,
       favs: (a, b) => b.st.favs - a.st.favs || (b.st.avg ?? -1) - (a.st.avg ?? -1),
-      cost: (a, b) => minPP(a.d) - minPP(b.d),
+      cost: (a, b) => minTotal(a.d) - minTotal(b.d),
     };
     list.sort(sorters[S.sort]);
     const people = S.data?.people || [];
@@ -806,7 +804,7 @@
             ${STATIC ? `<div class="cmp-stats">
               <div><b>${myScore(d.id) ?? "—"}</b><small>My rating</small></div>
               <div><b>${myFavorite() === d.id ? "♥" : "—"}</b><small>Favorite</small></div>
-              <div><b style="font-size:16px;line-height:1.6">${esc(costRange(d))}</b><small>Lodging pp</small></div>
+              <div><b style="font-size:16px;line-height:1.6">${esc(costRange(d))}</b><small>Lodging</small></div>
             </div>` : `<div class="cmp-stats">
               <div><b>${st.count ? st.avg.toFixed(1) : "—"}</b><small>Average</small></div>
               <div><b>${st.count}</b><small>Rated</small></div>
@@ -814,7 +812,7 @@
             </div>`}
             <dl class="kv">
               ${STATIC ? "" : `<dt>Ratings</dt><dd>${st.rows.length ? st.rows.map((r) => `${esc(r.name)} <b>${r.score}</b>`).join(" · ") : '<span class="muted">none yet</span>'}</dd>`}
-              <dt>Lodging pp</dt><dd>${esc(costRange(d))}</dd>
+              <dt>Lodging</dt><dd>${esc(costRange(d))} for 3 nights</dd>
               <dt>Travel</dt><dd>${esc(d.quick.travelLong)}</dd>
               <dt>Weather</dt><dd>${esc(d.quick.weather)} · ${esc(d.weather.snowShort)}</dd>
               <dt>Setting</dt><dd>${d.setting === "coast" ? "Coast" : "Mountains & forest"}</dd>
@@ -837,7 +835,7 @@
     v.querySelectorAll("[data-open]").forEach((b) => (b.onclick = () => openDetail(b.dataset.open)));
     v.querySelectorAll("[data-rate]").forEach((b) => (b.onclick = () => requireName(() => openRate(b.dataset.rate))));
   }
-  const minPP = (d) => (d.listings.length ? Math.min(...d.listings.map((l) => l.total / 3)) : 0);
+  const minTotal = (d) => (d.listings.length ? Math.min(...d.listings.map((l) => l.total)) : 0);
 
   // ---------- boot ----------
   render();

@@ -2,7 +2,7 @@
 window.TRIP = {
  "datesLabel": "Tue Nov 24 – Fri Nov 27, 2026",
  "travelers": "three adults",
- "checkedAt": "2026-10-09T20:34+00:00",
+ "checkedAt": "2026-10-09T21:43+00:00",
  "taxNote": "Airbnb's search totals include all fees; any local occupancy taxes are shown on Airbnb's checkout screen and aren't included here.",
  "minStayNote": "Meets it. Airbnb's dated search only returns homes bookable for the full 3-night Tue–Fri stay, including minimum-night and check-in-day rules.",
  "destinations": [
@@ -380,15 +380,6 @@ window.TRIP = {
      ]
     }
    ],
-   "inspiration": [
-    {
-     "name": "Home in Inverness \\u00b7 \\u26054.87 \\u00b7 2 bedrooms \\u00b7 4 beds \\u00b7 1 bath",
-     "summary": "",
-     "status": "Not available for our dates",
-     "reason": "Checked Oct 9, 2026: this listing shows up in undated Airbnb searches (so the check method can see it) but does not appear for Nov 24–27 with 3 guests, so those nights are booked or blocked by a stay rule. Replaced with the verified options above.",
-     "url": "https://www.airbnb.com/rooms/29907150"
-    }
-   ],
    "travel": {
     "drive": {
      "distance": "≈207 mi to Point Reyes Station (212 to Inverness)",
@@ -396,8 +387,15 @@ window.TRIP = {
      "route": "CA-267 → I-80 W over Donner Summit → Sacramento → Vallejo → CA-37 → Point Reyes",
      "notes": "Thanksgiving Tuesday and the Friday after are the two heaviest travel days. National INRIX/AAA guidance (2025; the 2026 forecast isn't out yet): leave Tuesday before noon and Friday before 11 a.m. Expect extra time through Sacramento and the I-80 Fairfield/Vallejo stretch (a rough +1–2 hrs; no route-specific data exists). Donner Summit (≈7,200 ft) often has chain controls Thanksgiving week: carry chains or approved traction devices and check Caltrans QuickMap before leaving."
     },
-    "flightsFor": "(Denver & Houston travelers)",
+    "flightsFor": "(Denver travelers; Dad drives from Kings Beach)",
     "flights": [
+     {
+      "route": "Denver → Sacramento (SMF)",
+      "carriers": "United, Southwest, Frontier",
+      "nonstop": "Yes",
+      "time": "≈2h35",
+      "dates": "Confirmed in Nov 24 & 27 schedules. Dad drives right past SMF on his way from Kings Beach, so he can pick you up"
+     },
      {
       "route": "Denver → SFO",
       "carriers": "United, Southwest, Frontier",
@@ -406,52 +404,17 @@ window.TRIP = {
       "dates": "Confirmed in Nov 24 & 27 schedules (many daily)"
      },
      {
-      "route": "Denver → Sacramento (SMF)",
-      "carriers": "United, Southwest, Frontier",
-      "nonstop": "Yes",
-      "time": "≈2h35",
-      "dates": "Confirmed in Nov 24 & 27 schedules"
-     },
-     {
       "route": "Denver → Oakland (OAK)",
       "carriers": "Southwest",
       "nonstop": "Yes",
       "time": "≈2h35",
       "dates": "Likely: runs daily in October, not yet confirmed for Nov 24/27 (~5/day)"
-     },
-     {
-      "route": "Houston IAH → SFO",
-      "carriers": "United",
-      "nonstop": "Yes",
-      "time": "≈4h15",
-      "dates": "Likely: runs daily in October, not yet confirmed for Nov 24/27 (10+/day)"
-     },
-     {
-      "route": "Houston IAH → SMF",
-      "carriers": "United",
-      "nonstop": "Yes",
-      "time": "≈4h10",
-      "dates": "Likely: runs daily in October, not yet confirmed for Nov 24/27 (1–2/day)"
-     },
-     {
-      "route": "Houston Hobby (HOU) → OAK or SMF",
-      "carriers": "Southwest",
-      "nonstop": "Yes, 1/day each",
-      "time": "≈4h05",
-      "dates": "Likely: runs daily in October, not yet confirmed for Nov 24/27; only one flight a day, so no same-day backup"
-     },
-     {
-      "route": "Houston Hobby → SFO · IAH → OAK",
-      "carriers": "",
-      "nonstop": "No",
-      "time": "—",
-      "dates": "No nonstop. Use the routes above."
      }
     ],
-    "airportDrive": "SFO or OAK → Point Reyes Station ≈52 mi, about 1½ hrs. SMF → Point Reyes ≈100 mi, about 2¼ hrs.",
+    "airportDrive": "Easiest: land at SMF and ride with Dad (SMF is on his route; ≈2¼ hrs on to Point Reyes). Or SFO/OAK → Point Reyes Station ≈52 mi, about 1½ hrs.",
     "notes": [
      "Live road conditions: quickmap.dot.ca.gov or 1-800-427-7623.",
-     "Free-flow times are routing estimates (OSRM). Holiday traffic and Sierra weather can add hours."
+     "Drive times are for Dad from Kings Beach, from routing estimates (OSRM). Holiday traffic and Sierra weather can add hours."
     ]
    },
    "weather": {
@@ -465,7 +428,7 @@ window.TRIP = {
    },
    "quick": {
     "travel": "≈4–4½ hr drive",
-    "travelLong": "Drive ≈207 mi / 4–4½ hrs from Kings Beach; flyers SFO/OAK + 1½ hrs",
+    "travelLong": "Dad drives ≈207 mi / 4–4½ hrs; Denver → SMF (ride with Dad) or SFO/OAK + 1½ hrs",
     "weather": "64° / 45°, damp"
    }
   },
@@ -484,13 +447,13 @@ window.TRIP = {
     "Sea Ranch's iconic architecture and Bluff Top Trail, plus Gualala Point Regional Park",
     "Goat Rock and the Russian River mouth (harbor seals), the Kortum Trail, and Fort Ross",
     "Armstrong Redwoods' old-growth groves are an easy add, great on a rainy day too",
-    "Several 3-bedroom options, so everyone gets their own room"
+    "Two 3-bedroom options, so everyone gets their own room"
    ],
    "tradeoffs": [
     "Highway 1 north of Jenner is slow and winding; Sea Ranch is ~1 hr past Jenner",
     "Groceries are limited on the coast; shop in Guerneville/Santa Rosa on the way in",
     "Wet, windy storms can hit in late November; Hwy 1 can see slides and closures",
-    "The splurge Sea Ranch house is far pricier than the others"
+    "Only one Sea Ranch house is open and affordable for our dates; the other picks are in Jenner and on the Russian River"
    ],
    "stayAreas": [
     {
@@ -590,7 +553,7 @@ window.TRIP = {
      "rooms": "2 bedrooms · 3 beds · 1 bath",
      "sleeping": "2 bedrooms, 3 beds: Bedroom 1 has a king (per listing photos), and the other beds are in Bedroom 2. Everyone has a bed, and two people share a room.",
      "why": "A Jenner classic (4.97, 230+ reviews) with views over the Russian River mouth and the Pacific, vintage board games, and a reading nook.",
-     "tier": "Best value",
+     "tier": null,
      "total": 1315.0,
      "discount": null,
      "freeCancel": true,
@@ -758,25 +721,25 @@ window.TRIP = {
      ]
     },
     {
-     "id": "8519059",
-     "name": "Stunning Modern Sea Ranch Stay",
-     "url": "https://www.airbnb.com/rooms/8519059?check_in=2026-11-24&check_out=2026-11-27&adults=3",
+     "id": "20402562",
+     "name": "Vacation Beach Hideout",
+     "url": "https://www.airbnb.com/rooms/20402562?check_in=2026-11-24&check_out=2026-11-27&adults=3",
      "type": "Home",
-     "location": "The Sea Ranch, CA",
-     "rating": "4.99 · 258 reviews",
-     "guests": 4,
-     "rooms": "3 bedrooms · 3 beds · 2.5 baths",
-     "sleeping": "3 bedrooms with king beds and 2.5 baths (master suite, guest room, loft bedroom), so everyone gets their own room.",
-     "why": "The architectural splurge: a 4.99-rated modern Sea Ranch home with a chef's kitchen, hot tub, and ocean views from nearly every room.",
-     "tier": "Splurge",
-     "total": 6350.0,
+     "location": "Guerneville (Vacation Beach), CA",
+     "rating": "4.95 · 136 reviews",
+     "guests": 6,
+     "rooms": "3 bedrooms · 4 beds · 1 bath",
+     "sleeping": "3 bedrooms, 4 beds, so everyone gets their own room. Only 1 bathroom.",
+     "why": "Highly rated (4.95, 130+ reviews) Russian River home with a hot tub, a full kitchen (oven, dishwasher, dining table), and a short walk to Vacation Beach on the river. 25 min to Jenner and the coast, 10 min to Armstrong Redwoods.",
+     "tier": "Best value",
+     "total": 1377.0,
      "discount": null,
-     "freeCancel": false,
-     "checkedAt": "2026-10-09T20:34+00:00",
+     "freeCancel": true,
+     "checkedAt": "2026-10-09T21:43+00:00",
      "amenities": [
       "Kitchen",
       "Oven",
-      "Wolf stainless steel gas stove",
+      "Stainless steel electric stove",
       "Dishwasher",
       "Refrigerator",
       "Coffee maker",
@@ -785,75 +748,66 @@ window.TRIP = {
       "Cooking basics",
       "Dishes and silverware",
       "Wine glasses",
+      "Blender",
       "Toaster",
-      "Rice maker",
-      "Fireplace guards",
-      "Indoor fireplace: gas",
+      "Indoor fireplace: wood-burning",
       "Private hot tub",
+      "Private BBQ grill: gas",
       "Free washer – In unit",
       "Hair dryer",
       "Free dryer – In unit",
       "Wifi",
-      "Heating",
+      "Radiant heating",
+      "Valley view",
       "Mountain view",
-      "Ocean view",
       "Garden view",
-      "Sea view",
       "Private patio or balcony",
-      "Private backyard – Not fully fenced",
-      "Free parking on premises"
+      "Private backyard – Fully fenced",
+      "Free parking on premises",
+      "Board games"
      ],
      "photos": [
       {
-       "url": "https://a0.muscache.com/im/pictures/10050767-26c3-41ab-b6a4-ca56bd1e9b22.jpg?im_w=960",
-       "caption": "Living Room"
+       "url": "https://a0.muscache.com/im/pictures/miso/Hosting-20402562/original/285e8d0c-74bb-4f7d-af29-1f38199c6470.jpeg?im_w=960",
+       "caption": "Living room"
       },
       {
-       "url": "https://a0.muscache.com/im/pictures/5aca9fbf-7c47-4a0e-84b7-65f114d78d13.jpg?im_w=960",
-       "caption": "The sunset view"
+       "url": "https://a0.muscache.com/im/pictures/miso/Hosting-20402562/original/441bc8a4-1eca-45ca-8c72-3b60a905f1a4.jpeg?im_w=960",
+       "caption": "Exterior"
       },
       {
-       "url": "https://a0.muscache.com/im/pictures/ef0248f4-8141-42d8-bd7e-47bbd1a873d4.jpg?im_w=960",
-       "caption": "View from Guest Room Patio."
+       "url": "https://a0.muscache.com/im/pictures/miso/Hosting-20402562/original/a2528bfb-7998-4961-ad82-b9e0a8f6e072.jpeg?im_w=960",
+       "caption": "Living room"
       },
       {
-       "url": "https://a0.muscache.com/im/pictures/9f41ef0f-c26b-4b79-815e-c01741a27e6f.jpg?im_w=960",
-       "caption": "The sunset view"
+       "url": "https://a0.muscache.com/im/pictures/miso/Hosting-20402562/original/11114730-2482-4315-b30e-3c6a510eba04.jpeg?im_w=960",
+       "caption": "Living room"
       },
       {
-       "url": "https://a0.muscache.com/im/pictures/108317550/fe654674_original.jpg?im_w=960",
-       "caption": "The view from the dining room and kitchen."
+       "url": "https://a0.muscache.com/im/pictures/miso/Hosting-20402562/original/c8d05a5f-19fc-449b-a4a2-bad8be0d587c.jpeg?im_w=960",
+       "caption": "Full kitchen"
       },
       {
-       "url": "https://a0.muscache.com/im/pictures/108317574/fe203b9f_original.jpg?im_w=960",
-       "caption": "The view from the Master Suite."
+       "url": "https://a0.muscache.com/im/pictures/miso/Hosting-20402562/original/ed50c790-4560-4442-9c1a-ea1665331849.jpeg?im_w=960",
+       "caption": "Full kitchen"
       },
       {
-       "url": "https://a0.muscache.com/im/pictures/108317489/406be45b_original.jpg?im_w=960",
-       "caption": "The view from the third / loft bedroom."
+       "url": "https://a0.muscache.com/im/pictures/miso/Hosting-20402562/original/c60e9334-a760-4c6c-993b-77e7e41923fc.jpeg?im_w=960",
+       "caption": "Dining area"
       },
       {
-       "url": "https://a0.muscache.com/im/pictures/108317521/cd8a3cb3_original.jpg?im_w=960",
-       "caption": "The view from the living room."
+       "url": "https://a0.muscache.com/im/pictures/miso/Hosting-20402562/original/88c2ea58-3284-4572-9f16-2ef43802af92.jpeg?im_w=960",
+       "caption": "Bedroom 1"
       },
       {
-       "url": "https://a0.muscache.com/im/pictures/5939b03a-ad14-4c0b-a77b-4406bb8d49dc.jpg?im_w=960",
-       "caption": "The sunrise view from the living room."
+       "url": "https://a0.muscache.com/im/pictures/miso/Hosting-20402562/original/789a13c8-568c-4d90-b439-42094ab7e6ea.jpeg?im_w=960",
+       "caption": "Bedroom 1"
       },
       {
-       "url": "https://a0.muscache.com/im/pictures/94605371-94d4-4d7f-85af-ada3add7d0a4.jpg?im_w=960",
-       "caption": "The View"
+       "url": "https://a0.muscache.com/im/pictures/miso/Hosting-20402562/original/8d6029be-bedd-4f92-ae08-699891a28a76.jpeg?im_w=960",
+       "caption": "Bedroom 2"
       }
      ]
-    }
-   ],
-   "inspiration": [
-    {
-     "name": "Home in Sea Ranch \\u00b7 \\u26054.87 \\u00b7 3 bedrooms \\u00b7 3 beds \\u00b7 3 baths",
-     "summary": "",
-     "status": "Unverified",
-     "reason": "Checked Oct 9, 2026: the CLEF House listing exists, but it did not come up in any Airbnb search, dated or undated, so availability and price for Nov 24–27 could not be confirmed. Open it and enter the dates to check.",
-     "url": "https://www.airbnb.com/rooms/12007458"
     }
    ],
    "travel": {
@@ -863,8 +817,15 @@ window.TRIP = {
      "route": "CA-267 → I-80 W over Donner → Sacramento → Santa Rosa → River Rd / CA-116 → Hwy 1",
      "notes": "Thanksgiving Tuesday and the Friday after are the two heaviest travel days. National INRIX/AAA guidance (2025; the 2026 forecast isn't out yet): leave Tuesday before noon and Friday before 11 a.m. Expect extra time through Sacramento and the I-80 Fairfield/Vallejo stretch (a rough +1–2 hrs; no route-specific data exists). Donner Summit (≈7,200 ft) often has chain controls Thanksgiving week: carry chains or approved traction devices and check Caltrans QuickMap before leaving."
     },
-    "flightsFor": "(Denver & Houston travelers)",
+    "flightsFor": "(Denver travelers; Dad drives from Kings Beach)",
     "flights": [
+     {
+      "route": "Denver → Sacramento (SMF)",
+      "carriers": "United, Southwest, Frontier",
+      "nonstop": "Yes",
+      "time": "≈2h35",
+      "dates": "Confirmed in Nov 24 & 27 schedules. Dad drives right past SMF on his way from Kings Beach, so he can pick you up"
+     },
      {
       "route": "Denver → SFO",
       "carriers": "United, Southwest, Frontier",
@@ -873,52 +834,17 @@ window.TRIP = {
       "dates": "Confirmed in Nov 24 & 27 schedules (many daily)"
      },
      {
-      "route": "Denver → Sacramento (SMF)",
-      "carriers": "United, Southwest, Frontier",
-      "nonstop": "Yes",
-      "time": "≈2h35",
-      "dates": "Confirmed in Nov 24 & 27 schedules"
-     },
-     {
       "route": "Denver → Oakland (OAK)",
       "carriers": "Southwest",
       "nonstop": "Yes",
       "time": "≈2h35",
       "dates": "Likely: runs daily in October, not yet confirmed for Nov 24/27 (~5/day)"
-     },
-     {
-      "route": "Houston IAH → SFO",
-      "carriers": "United",
-      "nonstop": "Yes",
-      "time": "≈4h15",
-      "dates": "Likely: runs daily in October, not yet confirmed for Nov 24/27 (10+/day)"
-     },
-     {
-      "route": "Houston IAH → SMF",
-      "carriers": "United",
-      "nonstop": "Yes",
-      "time": "≈4h10",
-      "dates": "Likely: runs daily in October, not yet confirmed for Nov 24/27 (1–2/day)"
-     },
-     {
-      "route": "Houston Hobby (HOU) → OAK or SMF",
-      "carriers": "Southwest",
-      "nonstop": "Yes, 1/day each",
-      "time": "≈4h05",
-      "dates": "Likely: runs daily in October, not yet confirmed for Nov 24/27; only one flight a day, so no same-day backup"
-     },
-     {
-      "route": "Houston Hobby → SFO · IAH → OAK",
-      "carriers": "",
-      "nonstop": "No",
-      "time": "—",
-      "dates": "No nonstop. Use the routes above."
      }
     ],
-    "airportDrive": "SFO or OAK → Jenner ≈91 mi, about 2 hrs (Sea Ranch is ≈1 more hour up Hwy 1). SMF → Jenner ≈122 mi, about 2¾ hrs.",
+    "airportDrive": "Easiest: land at SMF and ride with Dad (≈2¾ hrs on to Jenner). Or SFO/OAK → Jenner ≈91 mi, about 2 hrs; Sea Ranch is ≈1 more hour up Hwy 1.",
     "notes": [
      "Live road conditions: quickmap.dot.ca.gov or 1-800-427-7623.",
-     "Free-flow times are routing estimates (OSRM). Holiday traffic and Sierra weather can add hours."
+     "Drive times are for Dad from Kings Beach, from routing estimates (OSRM). Holiday traffic and Sierra weather can add hours."
     ]
    },
    "weather": {
@@ -932,7 +858,7 @@ window.TRIP = {
    },
    "quick": {
     "travel": "≈5–5½ hr drive",
-    "travelLong": "Drive ≈230–261 mi / 4¾–5½ hrs; flyers SFO/OAK + 2–3 hrs",
+    "travelLong": "Dad drives ≈230–261 mi / 4¾–5½ hrs; Denver → SMF (ride with Dad) or SFO/OAK + 2–3 hrs",
     "weather": "61° / 44°, breezy"
    }
   },
@@ -1314,15 +1240,6 @@ window.TRIP = {
      ]
     }
    ],
-   "inspiration": [
-    {
-     "name": "Cabin in Little River \\u00b7 \\u26054.75 \\u00b7 1 bedroom \\u00b7 2 beds \\u00b7 1 bath",
-     "summary": "",
-     "status": "Not suitable",
-     "reason": "This is a 1-bedroom cabin for 2 guests maximum, so it can't host three adults. It also didn't appear in dated or undated searches.",
-     "url": "https://www.airbnb.com/rooms/53817512"
-    }
-   ],
    "travel": {
     "drive": {
      "distance": "≈299 mi to Mendocino (296 to Little River)",
@@ -1330,8 +1247,15 @@ window.TRIP = {
      "route": "CA-267 → I-80 W over Donner → Sacramento → I-505 → I-5/CA-20 or US-101 → CA-128 through Anderson Valley",
      "notes": "Thanksgiving Tuesday and the Friday after are the two heaviest travel days. National INRIX/AAA guidance (2025; the 2026 forecast isn't out yet): leave Tuesday before noon and Friday before 11 a.m. Expect extra time through Sacramento and the I-80 Fairfield/Vallejo stretch (a rough +1–2 hrs; no route-specific data exists). Donner Summit (≈7,200 ft) often has chain controls Thanksgiving week: carry chains or approved traction devices and check Caltrans QuickMap before leaving."
     },
-    "flightsFor": "(Denver & Houston travelers)",
+    "flightsFor": "(Denver travelers; Dad drives from Kings Beach)",
     "flights": [
+     {
+      "route": "Denver → Sacramento (SMF)",
+      "carriers": "United, Southwest, Frontier",
+      "nonstop": "Yes",
+      "time": "≈2h35",
+      "dates": "Confirmed in Nov 24 & 27 schedules. Dad drives right past SMF on his way from Kings Beach, so he can pick you up"
+     },
      {
       "route": "Denver → SFO",
       "carriers": "United, Southwest, Frontier",
@@ -1340,52 +1264,17 @@ window.TRIP = {
       "dates": "Confirmed in Nov 24 & 27 schedules (many daily)"
      },
      {
-      "route": "Denver → Sacramento (SMF)",
-      "carriers": "United, Southwest, Frontier",
-      "nonstop": "Yes",
-      "time": "≈2h35",
-      "dates": "Confirmed in Nov 24 & 27 schedules"
-     },
-     {
       "route": "Denver → Oakland (OAK)",
       "carriers": "Southwest",
       "nonstop": "Yes",
       "time": "≈2h35",
       "dates": "Likely: runs daily in October, not yet confirmed for Nov 24/27 (~5/day)"
-     },
-     {
-      "route": "Houston IAH → SFO",
-      "carriers": "United",
-      "nonstop": "Yes",
-      "time": "≈4h15",
-      "dates": "Likely: runs daily in October, not yet confirmed for Nov 24/27 (10+/day)"
-     },
-     {
-      "route": "Houston IAH → SMF",
-      "carriers": "United",
-      "nonstop": "Yes",
-      "time": "≈4h10",
-      "dates": "Likely: runs daily in October, not yet confirmed for Nov 24/27 (1–2/day)"
-     },
-     {
-      "route": "Houston Hobby (HOU) → OAK or SMF",
-      "carriers": "Southwest",
-      "nonstop": "Yes, 1/day each",
-      "time": "≈4h05",
-      "dates": "Likely: runs daily in October, not yet confirmed for Nov 24/27; only one flight a day, so no same-day backup"
-     },
-     {
-      "route": "Houston Hobby → SFO · IAH → OAK",
-      "carriers": "",
-      "nonstop": "No",
-      "time": "—",
-      "dates": "No nonstop. Use the routes above."
      }
     ],
-    "airportDrive": "SFO or OAK → Mendocino ≈167 mi, about 3¾–4 hrs. SMF → Mendocino ≈191 mi, about 4¼ hrs. Flyers could meet the Kings Beach car in Sacramento.",
+    "airportDrive": "Easiest: land at SMF and ride with Dad (≈4¼ hrs on to Mendocino). Or SFO/OAK → Mendocino ≈167 mi, about 3¾–4 hrs.",
     "notes": [
      "Live road conditions: quickmap.dot.ca.gov or 1-800-427-7623.",
-     "Free-flow times are routing estimates (OSRM). Holiday traffic and Sierra weather can add hours."
+     "Drive times are for Dad from Kings Beach, from routing estimates (OSRM). Holiday traffic and Sierra weather can add hours."
     ]
    },
    "weather": {
@@ -1399,7 +1288,7 @@ window.TRIP = {
    },
    "quick": {
     "travel": "≈6 hr drive",
-    "travelLong": "Drive ≈299 mi / 6–6½ hrs; flyers SFO/OAK + ~4 hrs",
+    "travelLong": "Dad drives ≈299 mi / 6–6½ hrs; Denver → SMF (ride with Dad) or SFO/OAK + ~4 hrs",
     "weather": "56° / 43°, wettest"
    }
   },
@@ -1421,7 +1310,7 @@ window.TRIP = {
     "Great value on 3-bedroom homes with views"
    ],
    "tradeoffs": [
-    "Everyone flies, including Dad via a connection. No Denver nonstop to Chattanooga on our dates (Houston IAH has one)",
+    "Everyone flies. Dad has a nonstop from Houston IAH, but there's no Denver nonstop to Chattanooga on our dates",
     "From Denver, the practical route is Atlanta or Nashville plus a ~2½ hr drive",
     "Fall color is usually past peak by late November",
     "Eastern time zone, and Black Friday flights home are busy"
@@ -1701,7 +1590,7 @@ window.TRIP = {
      "guests": 6,
      "rooms": "3 bedrooms · 4 beds · 2.5 baths",
      "sleeping": "3 bedrooms, 4 beds, and 2.5 baths, so everyone gets their own room.",
-     "why": "A 5.0-rated home at the foot of Lookout Mountain, 10 min to downtown, and the best price per person here (discounted for our dates).",
+     "why": "A 5.0-rated home at the foot of Lookout Mountain, 10 min to downtown, and the lowest price here (discounted for our dates).",
      "tier": "Best value",
      "total": 810.0,
      "discount": "Discounted from $916",
@@ -1781,39 +1670,30 @@ window.TRIP = {
      ]
     }
    ],
-   "inspiration": [
-    {
-     "name": "Cabin in Chattanooga \\u00b7 \\u26055.0 \\u00b7 3 bedrooms \\u00b7 6 beds \\u00b7 2 baths",
-     "summary": "",
-     "status": "Not available for our dates",
-     "reason": "Checked Oct 9, 2026: it appears in undated searches but not for Nov 24–27 with 3 guests, so those nights are booked or restricted.",
-     "url": "https://www.airbnb.com/rooms/1177677078793219929"
-    }
-   ],
    "travel": {
     "drive": null,
-    "flightsFor": "(everyone flies; Dad via Reno)",
+    "flightsFor": "(Dad from Houston; others from Denver)",
     "flights": [
      {
-      "route": "Houston IAH → Chattanooga (CHA)",
+      "route": "Dad: Houston IAH → Chattanooga (CHA)",
       "carriers": "United Express",
       "nonstop": "Yes, 2/day",
       "time": "≈2h15",
       "dates": "Likely: runs daily in October, not yet confirmed for Nov 24/27"
      },
      {
+      "route": "Dad: Houston Hobby (HOU) → CHA",
+      "carriers": "",
+      "nonstop": "No",
+      "time": "—",
+      "dates": "No nonstop from Hobby. Fly from IAH."
+     },
+     {
       "route": "Denver → Chattanooga (CHA)",
       "carriers": "United (seasonal)",
       "nonstop": "No, not on our dates",
       "time": "—",
-      "dates": "The Saturday-only seasonal route ends Oct 24. Connect, or fly to Atlanta/Nashville."
-     },
-     {
-      "route": "Houston Hobby → CHA",
-      "carriers": "",
-      "nonstop": "No",
-      "time": "—",
-      "dates": "No nonstop. Use HOU → ATL or BNA, or fly from IAH."
+      "dates": "The Saturday-only route ends Oct 24. Connect, or fly to Atlanta/Nashville."
      },
      {
       "route": "Denver → Atlanta (ATL)",
@@ -1830,31 +1710,17 @@ window.TRIP = {
       "dates": "Confirmed in Nov 24 & 27 schedules (12 Tue / 9 Fri)"
      },
      {
-      "route": "Houston IAH → ATL",
+      "route": "Dad alt: Houston IAH → ATL",
       "carriers": "Delta, United, Frontier",
       "nonstop": "Yes",
       "time": "≈2h15",
-      "dates": "Confirmed Tue Nov 24 (7 Delta); Friday return likely"
-     },
-     {
-      "route": "Houston Hobby → ATL or BNA",
-      "carriers": "Southwest (and Delta to ATL)",
-      "nonstop": "Yes",
-      "time": "≈2h",
-      "dates": "Likely: runs daily in October, not yet confirmed for Nov 24/27"
-     },
-     {
-      "route": "Reno → anywhere here",
-      "carriers": "",
-      "nonstop": "No",
-      "time": "—",
-      "dates": "Dad would connect (e.g., via Denver)."
+      "dates": "Confirmed Tue Nov 24 (7 Delta); Friday return likely. Lets everyone meet at ATL and share one rental car"
      }
     ],
     "airportDrive": "CHA → Lookout Mountain ≈14 mi, about 30 min. ATL → Lookout Mountain ≈129 mi, about 2½–2¾ hrs. BNA → Lookout Mountain ≈129 mi, about 2½ hrs (and you lose an hour: Central → Eastern time).",
     "notes": [
-     "Black Friday (Nov 27) flights home are busy, so allow extra airport time.",
-     "Likely plan: Houston traveler flies IAH→CHA nonstop; Denver traveler flies DEN→ATL or DEN→BNA and rents the car."
+     "Two simple plans: (1) Dad flies IAH→CHA nonstop and the Denver crew flies DEN→ATL and drives up; or (2) everyone lands at ATL and shares one car.",
+     "Black Friday (Nov 27) flights home are busy, so allow extra airport time."
     ]
    },
    "weather": {
@@ -1867,8 +1733,8 @@ window.TRIP = {
     "source": "NOAA 1991–2020 November normals (Chattanooga airport; Point Park on Lookout Mountain)"
    },
    "quick": {
-    "travel": "IAH nonstop · DEN via ATL",
-    "travelLong": "IAH→CHA nonstop; Denver via ATL/BNA (+2½ hr drive); Dad connects",
+    "travel": "Dad IAH nonstop · DEN via ATL",
+    "travelLong": "Dad: IAH→CHA nonstop. Denver: nonstop to ATL/BNA + 2½ hr drive",
     "weather": "57–62° / 40°"
    }
   },
@@ -1887,10 +1753,10 @@ window.TRIP = {
     "Hawksbill Crag (Whitaker Point), one of Arkansas's most iconic views (about 3 mi round-trip)",
     "Lost Valley Trail to Eden Falls and the cave; Steel Creek and Big Bluff",
     "Elk grazing in Boxley Valley at dawn and dusk",
-    "Lowest lodging cost per person, with cabins that have hot tubs and fire pits"
+    "Lowest lodging cost of any rental option, with cabins that have hot tubs and fire pits"
    ],
    "tradeoffs": [
-    "Remote: the nearest airport (XNA) is about 1¾–2¼ hrs away on winding roads, and Dad would need a connecting flight",
+    "Remote: the nearest airport (XNA) is about 1¾–2¼ hrs away on winding roads",
     "Very limited groceries and restaurants near Jasper; shop before you arrive",
     "Late-November nights often drop below freezing (rare, light snow or ice is possible)",
     "Spotty cell service in the river valley"
@@ -2250,18 +2116,9 @@ window.TRIP = {
      ]
     }
    ],
-   "inspiration": [
-    {
-     "name": "Cabin in Jasper \\u00b7 \\u26055.0 \\u00b7 3 bedrooms \\u00b7 6 beds \\u00b7 3 baths",
-     "summary": "",
-     "status": "Not available for our dates",
-     "reason": "Checked Oct 9, 2026: it appears in undated searches but not for Nov 24–27 with 3 guests, so those nights are booked or restricted.",
-     "url": "https://www.airbnb.com/rooms/1168300011723281015"
-    }
-   ],
    "travel": {
     "drive": null,
-    "flightsFor": "(everyone flies; Dad via Reno)",
+    "flightsFor": "(Dad from Houston; others from Denver)",
     "flights": [
      {
       "route": "Denver → Northwest Arkansas (XNA)",
@@ -2271,14 +2128,14 @@ window.TRIP = {
       "dates": "Confirmed in Nov 24 & 27 schedules (3 UA Tue; 3 UA + 1 Frontier Fri)"
      },
      {
-      "route": "Houston IAH → XNA",
+      "route": "Dad: Houston IAH → XNA",
       "carriers": "United Express",
       "nonstop": "Yes, ~5/day",
       "time": "≈1h40",
       "dates": "Confirmed Tue Nov 24 (5 flights); Friday return likely"
      },
      {
-      "route": "Houston Hobby → XNA",
+      "route": "Dad: Houston Hobby → XNA",
       "carriers": "",
       "nonstop": "No",
       "time": "—",
@@ -2297,17 +2154,11 @@ window.TRIP = {
       "nonstop": "Yes",
       "time": "≈2h05",
       "dates": "Confirmed in Nov 24 & 27 schedules (backup; longer drive)"
-     },
-     {
-      "route": "Reno → XNA",
-      "carriers": "",
-      "nonstop": "No",
-      "time": "—",
-      "dates": "Dad would connect (e.g., via Denver)."
      }
     ],
     "airportDrive": "XNA → Ponca ≈75 mi, about 1¾–2 hrs. XNA → Jasper ≈89 mi, about 2¼ hrs on winding two-lane roads. SGF → Jasper about 2½ hrs; LIT → Jasper about 3 hrs.",
     "notes": [
+     "Both Denver and Houston IAH have nonstops to XNA, so everyone can meet there and share one car.",
      "Arrive before dark if possible: the last stretch is hilly, curvy, and unlit.",
      "Shop for Thanksgiving groceries in Bentonville/Springdale or Harrison before heading into the hills."
     ]
@@ -2323,7 +2174,7 @@ window.TRIP = {
    },
    "quick": {
     "travel": "Fly XNA + 2 hr drive",
-    "travelLong": "DEN & IAH nonstop to XNA, then ≈2 hr drive; Dad connects",
+    "travelLong": "Dad (IAH) and Denver both nonstop to XNA, then ≈2 hr drive",
     "weather": "59° / 38°, frosty"
    }
   },
@@ -2336,19 +2187,19 @@ window.TRIP = {
    "access": [
     "drive"
    ],
-   "tagline": "No rental, no long drive for Dad: Tahoe's north shore from his place.",
+   "tagline": "No rental and no travel for Dad: Tahoe's north shore from his place.",
    "vibe": "The simplest option: stay at Dad's place in Kings Beach on Lake Tahoe's north shore. No lodging cost and no long drive for Dad, and his own kitchen for the turkey. Crisp alpine air, a huge blue lake, and Tahoe Rim Trail hikes minutes away. The catch is the season: late November at 6,200 ft can mean real snow.",
    "highlights": [
     "No lodging cost, and Dad's familiar kitchen for the cooking",
     "Tahoe Rim Trail from Brockway Summit, Stateline Fire Lookout, Sand Harbor's boulders",
     "Lake-level walks on Kings Beach itself, and Truckee's historic downtown nearby",
-    "Easiest logistics for Dad; Reno (RNO) is about an hour away for flyers"
+    "Zero travel for Dad; Denver flyers have nonstops to Reno (RNO), about an hour away"
    ],
    "tradeoffs": [
     "Highest snow risk of all options: late November can bring storms, chain controls, and icy trails",
     "Colder: highs in the 40s, nights well below freezing",
     "Less 'getaway' feeling, and sleeping space depends on Dad's house",
-    "No nonstop from Houston to Reno in November (connect, or fly to Sacramento and drive 2½ hrs). Mt. Rose Hwy from Reno can need chains"
+    "Denver flyers land in Reno (about 1 hr away); Mt. Rose Hwy can need chains, and I-80 is the backup"
    ],
    "stayAreas": [
     {
@@ -2435,15 +2286,14 @@ window.TRIP = {
     }
    ],
    "listings": [],
-   "inspiration": [],
    "travel": {
     "drive": {
      "distance": "0 mi for Dad",
-     "time": "Home",
+     "time": "Dad's already home",
      "route": "—",
-     "notes": "Flyers land in Reno (or Sacramento) and drive up. From Reno: Mt. Rose Hwy (≈37 mi, ~1 hr; summit ≈8,900 ft, the first to need chains) or I-80 W + CA-267 (≈47 mi, ~1 hr), the safer choice in a storm."
+     "notes": "Denver flyers land in Reno and drive up: Mt. Rose Hwy (≈37 mi, ~1 hr; summit ≈8,900 ft, the first to need chains) or I-80 W + CA-267 (≈47 mi, ~1 hr), the safer choice in a storm."
     },
-    "flightsFor": "(Denver & Houston travelers)",
+    "flightsFor": "(Denver travelers)",
     "flights": [
      {
       "route": "Denver → Reno (RNO)",
@@ -2453,31 +2303,16 @@ window.TRIP = {
       "dates": "Confirmed Tue Nov 24 (United 11:15, 16:10, 19:17); Friday return likely"
      },
      {
-      "route": "Houston IAH → Reno",
-      "carriers": "United (seasonal)",
-      "nonstop": "No, not in November",
-      "time": "—",
-      "dates": "Seasonal route; next service starts Dec 17. Connect (e.g., via Denver), or fly to SMF."
-     },
-     {
-      "route": "Houston Hobby → Reno",
-      "carriers": "",
-      "nonstop": "No",
-      "time": "—",
-      "dates": "No nonstop. Connect, or fly HOU → SMF nonstop (Southwest, 1/day)."
-     },
-     {
-      "route": "Houston → Sacramento (SMF)",
-      "carriers": "United from IAH; Southwest from HOU",
+      "route": "Denver → Sacramento (SMF)",
+      "carriers": "United, Southwest, Frontier",
       "nonstop": "Yes",
-      "time": "≈4h10",
-      "dates": "Likely: runs daily in October, not yet confirmed for Nov 24/27. SMF → Kings Beach ≈120 mi, about 2½ hrs over Donner."
+      "time": "≈2h35",
+      "dates": "Confirmed in Nov 24 & 27 schedules. Backup if Reno is snowed in; SMF → Kings Beach ≈2½ hrs over Donner"
      }
     ],
-    "airportDrive": "RNO → Kings Beach about 1 hr. SMF → Kings Beach about 2½ hrs (via I-80 over Donner Summit).",
+    "airportDrive": "RNO → Kings Beach about 1 hr, or Dad picks you up.",
     "notes": [
-     "Check NV Roads (nvroads.com) and Caltrans QuickMap before driving; rent an AWD car with snow-rated tires if a storm is forecast.",
-     "Houston has no nonstop to Reno in November, the biggest travel downside of this option."
+     "Check NV Roads (nvroads.com) and Caltrans QuickMap before driving; if renting, get an AWD car with snow-rated tires when a storm is forecast."
     ]
    },
    "weather": {
@@ -2490,8 +2325,8 @@ window.TRIP = {
     "source": "NOAA 1991–2020 November normals (Tahoe City, 6,230 ft)"
    },
    "quick": {
-    "travel": "Home for Dad",
-    "travelLong": "Dad's home; DEN→RNO nonstop + 1 hr; no Houston–Reno nonstop in Nov",
+    "travel": "Dad's home",
+    "travelLong": "Dad's home; Denver → Reno nonstop + 1 hr drive",
     "weather": "48° / 26°, snow risk"
    }
   }
