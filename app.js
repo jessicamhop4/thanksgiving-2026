@@ -697,7 +697,7 @@
           <section class="section" id="s-stay"><h3>Where to stay</h3><div class="cols two">${d.stayAreas.map((a) => `<div class="box"><h4>${esc(a.name)}</h4><p style="margin:0">${esc(a.why)}</p></div>`).join("")}</div></section>
 
           <section class="section" id="s-travel"><h3>Getting there</h3>
-            ${t.drive ? `<div class="box" style="margin-bottom:12px"><h4>🚗 Dad's drive from Kings Beach</h4><dl class="kv"><dt>Distance</dt><dd>${esc(t.drive.distance)}</dd><dt>Time</dt><dd>${esc(t.drive.time)}</dd><dt>Route</dt><dd>${esc(t.drive.route)}</dd></dl><p class="note" style="margin-bottom:0">${esc(t.drive.notes)}</p></div>` : ""}
+            ${t.drive ? `<div class="box" style="margin-bottom:12px"><h4>🚗 Driving together from Kings Beach</h4><dl class="kv"><dt>Distance</dt><dd>${esc(t.drive.distance)}</dd><dt>Time</dt><dd>${esc(t.drive.time)}</dd><dt>Route</dt><dd>${esc(t.drive.route)}</dd></dl><p class="note" style="margin-bottom:0">${esc(t.drive.notes)}</p></div>` : ""}
             ${t.flights?.length ? `<div class="box" style="margin-bottom:12px"><h4>✈️ Flying ${t.flightsFor ? esc(t.flightsFor) : ""}</h4>
               <div class="table-wrap" style="margin-top:6px;border-radius:12px"><table class="matrix flights" style="min-width:520px"><thead><tr><th>Route</th><th>Nonstop?</th><th>Flight time</th><th>On our dates</th></tr></thead><tbody>
               ${t.flights.map((f) => `<tr><td><b>${esc(f.route)}</b>${f.carriers ? `<br><span class="note">${esc(f.carriers)}</span>` : ""}</td><td data-l="Nonstop">${esc(f.nonstop)}</td><td data-l="Time">${esc(f.time)}</td><td data-l="Our dates" style="text-align:left">${esc(f.dates)}</td></tr>`).join("")}
