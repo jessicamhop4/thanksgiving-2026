@@ -375,7 +375,7 @@
         </div>
         <p class="deck-help">Swipe or use the arrows to browse · rating is separate — tap <b>Rate</b> when you're ready.</p>
       </div>` : `<div class="empty">No destinations match those filters. <button class="link-btn" id="clearF">Clear filters</button></div>`}
-      <p class="footer-note">Rental prices and availability checked ${esc(fmtChecked(TRIP.checkedAt))}. Nothing is booked.</p>`;
+      <p class="footer-note">Rental prices and availability checked ${esc(fmtChecked(TRIP.checkedAt))}. Nothing is booked. · Version ${esc(TRIP.version)}</p>`;
     bindFilters(v);
     const cf = $("#clearF"); if (cf) cf.onclick = () => { S.filters = { setting: "all", access: "all" }; renderView(); };
     if (!list.length) return;
@@ -648,6 +648,7 @@
           ${l.freeCancel ? `<span class="badge">Free cancellation offered</span>` : `<span class="badge gray">Check cancellation terms</span>`}
           ${l.discount ? `<span class="badge warn">${esc(l.discount)}</span>` : ""}
           ${l.tier ? `<span class="badge gray">${esc(l.tier)}</span>` : ""}
+          ${l.total < 1000 && l.tier !== "Under $1k" ? `<span class="badge gray">Under $1k</span>` : ""}
         </div>
         <h4>${esc(l.name)}</h4>
         <div class="listing-meta">${esc(l.type)} · ${esc(l.location)} · ★ ${esc(l.rating)}</div>
@@ -828,7 +829,8 @@
         <thead><tr><th>Destination</th>${ratedPeople.map((p) => `<th>${esc(p.name)}</th>`).join("")}<th>Avg</th><th>♥</th></tr></thead>
         <tbody>${list.map(({ d, st }) => `<tr><td><b>${esc(d.name)}</b></td>${ratedPeople.map((p) => { const r = st.rows.find((x) => x.id === p.id); return `<td>${r ? r.score : '<span class="muted">–</span>'}${p.favorite === d.id ? " ♥" : ""}</td>`; }).join("")}<td><b>${st.count ? st.avg.toFixed(1) : "—"}</b></td><td>${st.favs || ""}</td></tr>`).join("")}</tbody>
       </table></div>
-      <p class="footer-note">“–” means not rated yet; averages only include people who rated that place.</p>` : ""}`;
+      <p class="footer-note">“–” means not rated yet; averages only include people who rated that place.</p>` : ""}
+      <p class="footer-note">Version ${esc(TRIP.version)}</p>`;
     bindFilters(v);
     v.querySelectorAll("[data-share]").forEach((b) => (b.onclick = () => shareRatings()));
     v.querySelectorAll("[data-sort]").forEach((b) => (b.onclick = () => { S.sort = b.dataset.sort; renderView(); }));
