@@ -321,3 +321,20 @@ table.matrix { border-collapse: collapse; width: 100%; font-size: 14px; min-widt
 .share-box { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; font-size: 14px; }
 .gallery figcaption { font-size: 12.5px; }
 .gallery .credit-line { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ---------- v1.7 top-3 picks ---------- */
+.lede.vibe { font-size: 16px; line-height: 1.55; margin: 16px 0 0; color: var(--ink); }
+.pick-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.pick-btn { display: grid; justify-items: center; gap: 2px; padding: 12px 6px; border-radius: 16px; border: 1.5px solid var(--line); background: #fff; cursor: pointer; min-height: 92px; }
+.pick-btn .medal { font-size: 24px; line-height: 1; }
+.pick-btn b { font-family: var(--serif); font-size: 18px; }
+.pick-btn small { font-size: 11.5px; color: var(--ink-soft); text-align: center; line-height: 1.25; }
+.pick-btn[aria-pressed="true"] { background: var(--forest); border-color: var(--forest); color: #fff; }
+.pick-btn[aria-pressed="true"] small { color: rgba(255,255,255,0.85); }
+.pick-panel .link-btn { margin-top: 10px; font-size: 14px; }
+.top3-list { list-style: none; padding: 0; margin: 0 0 12px; display: grid; gap: 8px; }
+.top3-list li { display: flex; align-items: center; gap: 10px; font-size: 16px; }
+.top3-list .medal { font-size: 22px; }
+.top3-list .link-btn { text-align: left; font-family: var(--serif); font-size: 17px; text-decoration: none; color: var(--forest-deep); }
+.rank-pill { background: var(--amber); color: #fff; }
+.share-box .note { margin: 0; }

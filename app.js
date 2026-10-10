@@ -1,207 +1,69 @@
 (() => {
   "use strict";
 
+  // Static page: no server. Each person's top 3 lives in their own browser and is shared by text.
   const TRIP = window.TRIP;
   const DESTS = TRIP.destinations;
   const byId = Object.fromEntries(DESTS.map((d) => [d.id, d]));
-  const LS = { code: "tg26.code", name: "tg26.name" };
-  // Static mode: no server. Ratings and favorite live in this browser only and are shared by copy/paste.
-  const STATIC = !!(window.CONFIG && window.CONFIG.static);
-  const LOCAL_KEY = "tg26.local";
-  const POLL_MS = (window.CONFIG && window.CONFIG.apiUrl) ? 30000 : 20000;
+  const LS = { name: "tg26.name", top3: "tg26.top3" };
+  const MEDALS = ["🥇", "🥈", "🥉"];
 
   // ---------- state ----------
   const S = {
-    code: null,
     name: localStorage.getItem(LS.name) || "",
+    top3: loadTop3(),
     tab: "discover",
     filters: { setting: "all", access: "all" },
     index: 0,
-    data: null, // { people, ratings, comments }
-    sync: "idle", // idle | loading | ok | error
-    syncError: "",
-    lastSync: null,
-    sort: STATIC ? "mine" : "avg",
-    commentKind: "feedback",
+    sort: "mine",
   };
 
-  // Family code may arrive in the link (#k=...) — store it and scrub it from the address bar.
-  (function readCode() {
-    const m = location.hash.match(/k=([^&]+)/);
-    if (m) {
-      localStorage.setItem(LS.code, decodeURIComponent(m[1]));
-      history.replaceState(null, "", location.pathname + location.search);
+  function loadTop3() {
+    try {
+      const v = JSON.parse(localStorage.getItem(LS.top3));
+      if (Array.isArray(v) && v.length === 3) return v.map((id) => (id && byId[id] ? id : null));
+    } catch { /* ignore */ }
+    return [null, null, null];
+  }
+  function saveTop3() {
+    try { localStorage.setItem(LS.top3, JSON.stringify(S.top3)); return true; }
+    catch { toast("Couldn't save on this device (private browsing?).", "error"); return false; }
+  }
+  const rankOf = (id) => S.top3.indexOf(id) + 1; // 0 = not picked
+
+  // Put a destination at rank 1–3 (or 0 to remove). Whatever held that rank drops out.
+  function setPick(id, rank) {
+    const d = byId[id];
+    const prevRank = rankOf(id);
+    if (prevRank) S.top3[prevRank - 1] = null;
+    let bumped = null, swapped = null;
+    if (rank) {
+      bumped = S.top3[rank - 1];
+      S.top3[rank - 1] = id;
+      // If this place moved from another slot, swap the bumped one into the vacated slot.
+      if (bumped && prevRank) { S.top3[prevRank - 1] = bumped; swapped = bumped; bumped = null; }
     }
-    S.code = STATIC ? "local" : localStorage.getItem(LS.code);
-  })();
+    if (!saveTop3()) return;
+    refreshPicks();
+    if (!rank) toast(`Removed ${d.name} from your top 3`);
+    else toast(`${MEDALS[rank - 1]} ${d.name} is your #${rank}` +
+      (bumped ? ` (${byId[bumped].name} moved out)` : swapped ? ` (${byId[swapped].name} moved to #${prevRank})` : ""));
+  }
 
   // ---------- helpers ----------
   const $ = (sel, root = document) => root.querySelector(sel);
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const money = (n) => "$" + Math.round(n).toLocaleString("en-US");
-  const money2 = (n) => "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  const initials = (n) => n.split(/\s+/).map((p) => p[0]).join("").slice(0, 2).toUpperCase();
-  const meId = () => S.name.trim().toLowerCase();
-  const fmtWhen = (iso) => {
-    const d = new Date(iso);
-    return d.toLocaleDateString("en-US", { month: "short", day: "numeric" }) + " · " + d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
-  };
-  const fmtChecked = (iso) => new Date(iso).toLocaleString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit", timeZoneName: "short" });
+  const shortDate = (iso) => new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  const pickedCount = () => S.top3.filter(Boolean).length;
 
-  function toast(msg, kind = "ok", action) {
+  function toast(msg, kind = "ok") {
     const el = document.createElement("div");
     el.className = "toast" + (kind === "error" ? " error" : "");
     el.innerHTML = `<span>${esc(msg)}</span>`;
-    if (action) {
-      const b = document.createElement("button");
-      b.textContent = action.label;
-      b.onclick = () => { el.remove(); action.fn(); };
-      el.appendChild(b);
-    }
     $("#toasts").appendChild(el);
-    setTimeout(() => el.remove(), kind === "error" ? 7000 : 2600);
+    setTimeout(() => el.remove(), kind === "error" ? 6000 : 2400);
   }
-
-  // ---------- API ----------
-  const CFG = window.CONFIG || {};
-
-  // Two interchangeable backends: a Google Apps Script web app (CONFIG.apiUrl) or the local Worker (/api/*).
-  async function api(path, opts = {}) {
-    if (STATIC) return localApi(path, opts);
-    if (CFG.apiUrl) return sheetsApi(path, opts);
-    let res;
-    try {
-      res = await fetch(path, {
-        method: opts.method || "GET",
-        headers: { "content-type": "application/json", "x-family-code": S.code || "" },
-        body: opts.body ? JSON.stringify(opts.body) : undefined,
-      });
-    } catch {
-      throw new Error("Couldn't reach the server. Check your connection and try again.");
-    }
-    let data = null;
-    try { data = await res.json(); } catch { /* non-JSON */ }
-    if (!res.ok) {
-      const err = new Error((data && data.error) || `Request failed (${res.status})`);
-      err.status = res.status;
-      throw err;
-    }
-    return data;
-  }
-
-  function localApi(path, opts) {
-    let st;
-    try { st = JSON.parse(localStorage.getItem(LOCAL_KEY)) || null; } catch { st = null; }
-    st = st || { people: [], ratings: [], comments: [] };
-    const b = opts.body || {};
-    if (path !== "/api/state") {
-      const name = String(b.name || "").replace(/\s+/g, " ").trim();
-      if (!name) throw new Error("Please enter your name first.");
-      const id = name.toLowerCase();
-      let me = st.people.find((p) => p.id === id);
-      if (!me) { me = { id, name, favorite: null }; st.people.push(me); }
-      me.name = name;
-      if (path === "/api/rating") {
-        st.ratings = st.ratings.filter((r) => !(r.person_id === id && r.dest_id === b.destId));
-        if (b.score !== null) st.ratings.push({ person_id: id, dest_id: b.destId, score: b.score, updated_at: new Date().toISOString() });
-      } else if (path === "/api/favorite") {
-        me.favorite = b.destId;
-      }
-      try { localStorage.setItem(LOCAL_KEY, JSON.stringify(st)); } catch { throw new Error("Couldn't save on this device (private browsing?)."); }
-    }
-    return Promise.resolve(st);
-  }
-
-  // Plain-text summary of this person's ratings, for texting to the family.
-  function shareText() {
-    const fav = myFavorite();
-    const rated = DESTS.map((d) => ({ d, s: myScore(d.id) })).filter((x) => x.s).sort((a, b) => b.s - a.s);
-    const lines = rated.map((x) => `${x.d.name}: ${x.s}/10${fav === x.d.id ? " ♥ favorite" : ""}`);
-    const unrated = DESTS.filter((d) => !myScore(d.id)).map((d) => d.name);
-    return `${S.name ? S.name + "'s" : "My"} Thanksgiving ratings (1 = not interested, 10 = would love to go):\n` +
-      (lines.length ? lines.join("\n") : "(none yet)") +
-      (unrated.length ? `\nNot rated: ${unrated.join(", ")}` : "") +
-      (fav && !myScore(fav) ? `\n♥ Favorite: ${byId[fav].name}` : "") +
-      `\n${location.href.split("#")[0]}`;
-  }
-  async function shareRatings() {
-    if (!S.name) return askName(shareRatings);
-    const text = shareText();
-    try {
-      if (navigator.share) { await navigator.share({ text }); return; }
-    } catch (e) { if (e && e.name === "AbortError") return; }
-    try { await navigator.clipboard.writeText(text); toast("Copied! Paste it into the family group text."); }
-    catch {
-      const ov = overlay(`<div class="sheet small" role="dialog" aria-modal="true"><div class="sheet-head"><h3>Copy your ratings</h3><button class="icon-btn" data-close aria-label="Close">×</button></div><div class="sheet-body" style="padding-top:14px"><textarea class="input" rows="9" readonly>${esc(text)}</textarea><p class="note">Select all, copy, and paste into the family group text.</p></div></div>`);
-      ov.querySelector("textarea").select();
-    }
-  }
-  const shareBox = () => `<div class="box share-box"><span>Ratings stay on this device. Send yours to the family:</span><button class="btn btn-primary btn-sm" data-share>Share my ratings</button></div>`;
-
-  async function sheetsApi(path, opts) {
-    const body = { ...(opts.body || {}), code: S.code || "" };
-    if (path === "/api/state") body.action = "state";
-    else if (path === "/api/rating") body.action = "rating";
-    else if (path === "/api/favorite") body.action = "favorite";
-    else if (path === "/api/comment") body.action = "comment";
-    else if (path.startsWith("/api/comment/")) { body.action = "deleteComment"; body.id = decodeURIComponent(path.split("/").pop()); }
-    let data;
-    try {
-      // text/plain keeps this a "simple" request, so Apps Script needs no CORS preflight.
-      const res = await fetch(CFG.apiUrl, { method: "POST", headers: { "content-type": "text/plain;charset=utf-8" }, body: JSON.stringify(body), redirect: "follow" });
-      data = await res.json();
-    } catch {
-      throw new Error("Couldn't reach the shared sheet. Check your connection and try again.");
-    }
-    if (data && data.error) {
-      const err = new Error(data.error);
-      err.status = data.status || 400;
-      throw err;
-    }
-    return data;
-  }
-
-  async function refresh({ quiet = false } = {}) {
-    if (!quiet) { S.sync = "loading"; renderSync(); }
-    try {
-      S.data = await api("/api/state");
-      S.sync = "ok"; S.syncError = ""; S.lastSync = new Date();
-    } catch (e) {
-      if (e.status === 401) { localStorage.removeItem(LS.code); S.code = null; render(); return; }
-      S.sync = "error"; S.syncError = e.message || "Couldn't reach the server.";
-    }
-    renderShared();
-  }
-
-  async function mutate(path, method, body, successMsg) {
-    try {
-      S.data = await api(path, { method, body });
-      S.sync = "ok"; S.lastSync = new Date();
-      renderShared();
-      if (successMsg) toast(successMsg);
-      return true;
-    } catch (e) {
-      if (e.status === 401) { localStorage.removeItem(LS.code); S.code = null; render(); return false; }
-      toast(e.message || "Couldn't save — check your connection.", "error", { label: "Retry", fn: () => mutate(path, method, body, successMsg) });
-      return false;
-    }
-  }
-
-  // ---------- derived ----------
-  function statsFor(destId) {
-    const d = S.data;
-    if (!d) return { avg: null, count: 0, favs: 0, rows: [], favNames: [] };
-    const names = Object.fromEntries(d.people.map((p) => [p.id, p.name]));
-    const rows = d.ratings.filter((r) => r.dest_id === destId).map((r) => ({ name: names[r.person_id] || r.person_id, id: r.person_id, score: r.score }));
-    rows.sort((a, b) => b.score - a.score);
-    const favPeople = d.people.filter((p) => p.favorite === destId);
-    const count = rows.length;
-    const avg = count ? rows.reduce((s, r) => s + r.score, 0) / count : null; // unrated people don't count as zero
-    return { avg, count, favs: favPeople.length, favNames: favPeople.map((p) => p.name), rows };
-  }
-  const myScore = (destId) => S.data?.ratings.find((r) => r.dest_id === destId && r.person_id === meId())?.score ?? null;
-  const myFavorite = () => S.data?.people.find((p) => p.id === meId())?.favorite ?? null;
-  const commentsFor = (destId) => (S.data?.comments || []).filter((c) => c.dest_id === destId);
 
   function filtered() {
     return DESTS.filter((d) =>
@@ -215,139 +77,89 @@
     const lo = Math.min(...totals), hi = Math.max(...totals);
     return lo === hi ? money(lo) : `${money(lo)}–${money(hi)}`;
   }
+  const minTotal = (d) => (d.listings.length ? Math.min(...d.listings.map((l) => l.total)) : 0);
 
-  // ---------- render: gate ----------
-  function renderGate(err = "") {
-    const hero = DESTS[0].hero.url;
-    $("#app").innerHTML = `
-      <div class="gate"><form class="gate-card" id="gateForm" autocomplete="off">
-        <div class="gate-photo" style="background-image:url('${esc(hero)}')" role="img" aria-label="${esc(DESTS[0].hero.caption)}"></div>
-        <div class="gate-body">
-          <h1>Thanksgiving 2026</h1>
-          <p>A private family planner for ${esc(TRIP.travelers)} · ${esc(TRIP.datesLabel)}. Enter the family code from your invite link.</p>
-          <div class="field"><label for="code">Family code</label><input class="input" id="code" name="code" required autocomplete="off" autocapitalize="off" spellcheck="false" /></div>
-          <div class="form-error" id="gateErr">${esc(err)}</div>
-          <button class="btn btn-primary btn-block" id="gateBtn">Come on in</button>
-        </div></form></div>`;
-    $("#gateForm").onsubmit = async (e) => {
-      e.preventDefault();
-      const btn = $("#gateBtn");
-      btn.disabled = true; btn.innerHTML = `<span class="spinner sm"></span> Checking…`;
-      S.code = $("#code").value.trim();
-      try {
-        S.data = await api("/api/state");
-        localStorage.setItem(LS.code, S.code);
-        S.sync = "ok"; S.lastSync = new Date();
-        render();
-      } catch (er) {
-        S.code = null;
-        renderGate(er.status === 401 ? "That code didn't match. Check the invite link." : er.message || "Couldn't reach the server.");
-      }
-    };
-    $("#code").focus();
+  // ---------- sharing ----------
+  function shareText() {
+    const lines = S.top3.map((id, i) => `${i + 1}. ${id ? byId[id].name : "—"}`);
+    return `${S.name ? S.name + "'s" : "My"} top 3 for Thanksgiving:\n${lines.join("\n")}\n${location.href.split("#")[0]}`;
+  }
+  async function shareTop3() {
+    if (!pickedCount()) { toast("Pick at least one place first."); return; }
+    if (!S.name) return askName(shareTop3);
+    const text = shareText();
+    try {
+      if (navigator.share) { await navigator.share({ text }); return; }
+    } catch (e) { if (e && e.name === "AbortError") return; }
+    try { await navigator.clipboard.writeText(text); toast("Copied! Paste it into the family group text."); }
+    catch {
+      const ov = overlay(`<div class="sheet small" role="dialog" aria-modal="true"><div class="sheet-head"><h3>Copy your top 3</h3><button class="icon-btn" data-close aria-label="Close">×</button></div><div class="sheet-body" style="padding-top:14px"><textarea class="input" rows="6" readonly>${esc(text)}</textarea><p class="note">Copy and paste into the family group text.</p></div></div>`);
+      ov.querySelector("textarea").select();
+    }
   }
 
   function askName(after) {
     const ov = overlay(`
       <div class="sheet small" role="dialog" aria-modal="true" aria-labelledby="nameTitle">
-        <div class="sheet-head"><h3 id="nameTitle">Who's rating?</h3><button class="icon-btn" data-close aria-label="Close">×</button></div>
+        <div class="sheet-head"><h3 id="nameTitle">Your name</h3><button class="icon-btn" data-close aria-label="Close">×</button></div>
         <form class="sheet-body" id="nameForm" style="padding-top:16px">
-          <p class="note" style="margin-top:0">Use the same name on every device so your ratings stay together. Names aren't case-sensitive.</p>
-          <div class="field"><label for="nm">Your name</label><input class="input" id="nm" maxlength="40" required value="${esc(S.name)}" /></div>
-          ${S.data?.people.length ? `<p class="note">Already here: ${S.data.people.map((p) => `<button type="button" class="link-btn" data-pick="${esc(p.name)}">${esc(p.name)}</button>`).join(", ")}</p>` : ""}
+          <p class="note" style="margin-top:0">So the family knows whose top 3 this is.</p>
+          <div class="field"><label for="nm" class="sr-only">Your name</label><input class="input" id="nm" maxlength="40" required value="${esc(S.name)}" /></div>
           <button class="btn btn-primary btn-block">Save</button>
         </form>
       </div>`);
-    ov.querySelectorAll("[data-pick]").forEach((b) => (b.onclick = () => { $("#nm", ov).value = b.dataset.pick; }));
     $("#nameForm", ov).onsubmit = (e) => {
       e.preventDefault();
       const v = $("#nm", ov).value.replace(/\s+/g, " ").trim();
       if (!v) return;
       S.name = v; localStorage.setItem(LS.name, v);
       closeOverlay(ov);
-      renderTopbar();
-      renderView();
-      toast(`Hi, ${v}!`);
       after && after();
     };
     setTimeout(() => $("#nm", ov).focus(), 50);
   }
-  const requireName = (fn) => (S.name ? fn() : askName(fn));
 
-  // ---------- render: shell ----------
+  // ---------- shell ----------
   function render() {
-    if (!S.code) return renderGate();
     $("#app").innerHTML = `
       <header class="topbar" id="topbar"></header>
-      <div id="bannerSlot"></div>
       <main id="view"></main>`;
     renderTopbar();
     renderView();
-    if (!S.data) refresh();
   }
 
   function renderTopbar() {
     const tb = $("#topbar");
-    if (!tb) return;
     tb.innerHTML = `
       <div class="topbar-inner">
-        <div class="brand"><b>Thanksgiving 2026</b><span>${esc(TRIP.datesLabel)} · <span class="sync-note" id="syncNote"></span></span></div>
-        <button class="me-chip" id="meBtn" aria-label="Change your name">
-          ${S.name ? `<span class="avatar">${esc(initials(S.name))}</span><span class="me-name">${esc(S.name)}</span>` : `<span class="avatar">?</span><span class="me-name">Your name</span>`}
-        </button>
+        <div class="brand"><b>Thanksgiving 2026</b><span>${esc(TRIP.datesLabel)}</span></div>
+        <button class="me-chip" id="top3Btn" aria-label="My top 3">🏆 <span class="me-name">My top 3 · ${pickedCount()}/3</span></button>
       </div>
       <nav class="tabs" role="tablist">
         <button class="tab" role="tab" data-tab="discover" aria-selected="${S.tab === "discover"}">Discover</button>
-        <button class="tab" role="tab" data-tab="compare" aria-selected="${S.tab === "compare"}">${STATIC ? "Compare" : "Compare & results"}</button>
+        <button class="tab" role="tab" data-tab="compare" aria-selected="${S.tab === "compare"}">Compare</button>
       </nav>`;
-    $("#meBtn").onclick = () => askName();
+    $("#top3Btn").onclick = openTop3;
     tb.querySelectorAll("[data-tab]").forEach((b) => (b.onclick = () => { S.tab = b.dataset.tab; renderTopbar(); renderView(); window.scrollTo({ top: 0 }); }));
-    renderSync();
-  }
-
-  function renderSync() {
-    const n = $("#syncNote");
-    if (STATIC) { if (n) n.textContent = "ratings saved on this device"; return; }
-    if (n) {
-      n.innerHTML = S.sync === "loading" ? `<span class="spinner sm"></span> syncing`
-        : S.sync === "error" ? `<span class="sync-dot err"></span> offline`
-        : S.lastSync ? `<span class="sync-dot"></span> shared · live` : "";
-    }
-    const slot = $("#bannerSlot");
-    if (slot) {
-      slot.innerHTML = S.sync === "error"
-        ? `<div class="banner" role="alert"><span>Can't reach the shared board: ${esc(S.syncError)} Your view may be out of date.</span><button class="btn btn-soft" id="retryBtn">Retry</button></div>` : "";
-      const r = $("#retryBtn"); if (r) r.onclick = () => refresh();
-    }
-  }
-
-  // Re-render the parts that show shared data without resetting the deck position.
-  function renderShared() {
-    renderSync();
-    if (S.tab === "compare") renderView();
-    else updateCardStats();
-    document.querySelectorAll("[data-live]").forEach((el) => {
-      const [kind, id] = el.dataset.live.split(":");
-      if (kind === "rate") el.innerHTML = ratePanelInner(byId[id]);
-      if (kind === "comments") {
-        // Keep an in-progress draft (and focus) across background refreshes.
-        const ta = el.querySelector("textarea");
-        const draft = ta ? ta.value : "", focused = ta && document.activeElement === ta;
-        el.innerHTML = commentsInner(byId[id]);
-        const nta = el.querySelector("textarea");
-        if (nta && draft) nta.value = draft;
-        if (nta && focused) nta.focus();
-      }
-      if (kind === "summary") el.innerHTML = summaryInner(byId[id]);
-      bindLive(el, byId[id]);
-    });
   }
 
   function renderView() {
     const v = $("#view");
-    if (!v) return;
     if (S.tab === "discover") renderDiscover(v);
     else renderCompare(v);
+  }
+
+  // After a pick changes, refresh everything that shows picks without resetting the deck.
+  function refreshPicks() {
+    const btn = $("#top3Btn .me-name");
+    if (btn) btn.textContent = `My top 3 · ${pickedCount()}/3`;
+    if (S.tab === "compare") renderView();
+    DESTS.forEach((d) => {
+      document.querySelectorAll(`[data-rankpill="${d.id}"]`).forEach((el) => (el.outerHTML = rankPill(d.id)));
+      document.querySelectorAll(`[data-pickbtn="${d.id}"]`).forEach((el) => (el.textContent = pickLabel(d.id)));
+    });
+    document.querySelectorAll("[data-pickpanel]").forEach((el) => { el.innerHTML = pickPanelInner(byId[el.dataset.pickpanel]); bindPickPanel(el); });
+    document.querySelectorAll("[data-top3list]").forEach((el) => { el.innerHTML = top3ListInner(); bindTop3List(el); });
   }
 
   function filterBar() {
@@ -373,9 +185,9 @@
           <div class="dots" role="tablist">${list.map((d, i) => `<button class="dot" data-i="${i}" aria-label="${esc(d.name)}" aria-current="${i === S.index}"></button>`).join("")}</div>
           <button class="icon-btn" id="nextBtn" aria-label="Next destination">›</button>
         </div>
-        <p class="deck-help">Swipe to browse · tap <b>Rate</b> to score</p>
+        <p class="deck-help">Swipe to browse · tap <b>Pick</b> to build your top 3</p>
       </div>` : `<div class="empty">No destinations match those filters. <button class="link-btn" id="clearF">Clear filters</button></div>`}
-      <p class="footer-note">Prices checked ${esc(new Date(TRIP.checkedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" }))} · nothing booked · v${esc(TRIP.version)}</p>`;
+      <p class="footer-note">Prices checked ${esc(shortDate(TRIP.checkedAt))} · nothing booked · v${esc(TRIP.version)}</p>`;
     bindFilters(v);
     const cf = $("#clearF"); if (cf) cf.onclick = () => { S.filters = { setting: "all", access: "all" }; renderView(); };
     if (!list.length) return;
@@ -385,46 +197,34 @@
     v.querySelectorAll(".dot").forEach((b) => (b.onclick = () => { S.index = +b.dataset.i; drawDeck(list); syncDots(); }));
   }
 
+  const rankPill = (id) => rankOf(id)
+    ? `<span class="pill rank-pill" data-rankpill="${id}">${MEDALS[rankOf(id) - 1]} Your #${rankOf(id)}</span>`
+    : `<span data-rankpill="${id}"></span>`;
+  const pickLabel = (id) => (rankOf(id) ? `${MEDALS[rankOf(id) - 1]} Your #${rankOf(id)}` : "Pick");
+
   function cardHTML(d, behind) {
-    const st = statsFor(d.id);
-    const mine = myScore(d.id);
     return `<article class="card${behind ? " behind" : ""}" data-id="${d.id}" aria-label="${esc(d.name)}" ${behind ? 'aria-hidden="true"' : ""}>
       <div class="card-photo" style="background-image:url('${esc(d.hero.url)}')" role="img" aria-label="${esc(d.hero.caption)}"></div>
       <div class="swipe-hint left">Next ›</div><div class="swipe-hint right">‹ Back</div>
       <div class="card-top">
         <span class="pill">${esc(d.personality)}</span>
-        <span class="pill dark" data-stat="${d.id}">${statPill(st, d.id)}</span>
+        ${rankPill(d.id)}
       </div>
-      ${mine && !STATIC ? `<span class="pill my-score" data-mine="${d.id}">You: ${mine}/10${myFavorite() === d.id ? " ♥" : ""}</span>` : `<span class="my-score" data-mine="${d.id}"></span>`}
       <div class="card-body">
         <div class="card-kicker">${esc(d.region)}</div>
         <h2>${esc(d.name)}</h2>
         <p class="card-tagline">${esc(d.tagline)}</p>
         <div class="facts">
-          <div class="fact"><small>${d.access.includes("drive") ? "From Kings Beach" : "Getting there"}</small><b>${esc(d.quick.travel)}</b></div>
-          <div class="fact"><small>Late Nov</small><b>${esc(d.quick.weather)}</b></div>
+          <div class="fact"><small>Travel</small><b>${esc(d.stat.travel)}</b></div>
+          <div class="fact"><small>Late Nov</small><b>${esc(d.stat.temps)}</b></div>
           <div class="fact"><small>Lodging · 3 nights</small><b>${esc(costRange(d))}</b></div>
         </div>
         <div class="card-actions">
           <button class="btn btn-on-photo" data-open="${d.id}">Explore</button>
-          <button class="btn btn-on-photo-ghost" data-rate="${d.id}">${mine ? "Update rating" : "Rate"}</button>
+          <button class="btn btn-on-photo-ghost" data-pick="${d.id}" data-pickbtn="${d.id}">${pickLabel(d.id)}</button>
         </div>
       </div>
     </article>`;
-  }
-  const statPill = (st, id) => STATIC ? (myScore(id) ? `You: ${myScore(id)}/10${myFavorite() === id ? " ♥" : ""}` : "Not rated yet") : st.count ? `★ ${st.avg.toFixed(1)} · ${st.count} rated${st.favs ? ` · ♥ ${st.favs}` : ""}` : "No ratings yet";
-
-  function updateCardStats() {
-    DESTS.forEach((d) => {
-      const st = statsFor(d.id);
-      document.querySelectorAll(`[data-stat="${d.id}"]`).forEach((el) => (el.textContent = statPill(st, d.id)));
-      const mine = myScore(d.id);
-      document.querySelectorAll(`[data-mine="${d.id}"]`).forEach((el) => {
-        el.className = mine && !STATIC ? "pill my-score" : "my-score";
-        el.textContent = mine && !STATIC ? `You: ${mine}/10${myFavorite() === d.id ? " ♥" : ""}` : "";
-      });
-      document.querySelectorAll(`[data-rate="${d.id}"]`).forEach((el) => (el.textContent = mine ? "Update rating" : "Rate"));
-    });
   }
 
   function drawDeck(list) {
@@ -432,10 +232,9 @@
     const cur = list[S.index];
     const next = list[(S.index + 1) % list.length];
     deck.innerHTML = (list.length > 1 ? cardHTML(next, true) : "") + cardHTML(cur, false);
-    const top = deck.querySelector(".card:not(.behind)");
     deck.querySelectorAll("[data-open]").forEach((b) => (b.onclick = () => openDetail(b.dataset.open)));
-    deck.querySelectorAll("[data-rate]").forEach((b) => (b.onclick = () => requireName(() => openRate(b.dataset.rate))));
-    attachSwipe(top, list);
+    deck.querySelectorAll("[data-pick]").forEach((b) => (b.onclick = () => openPick(b.dataset.pick)));
+    attachSwipe(deck.querySelector(".card:not(.behind)"), list);
   }
   function syncDots() { document.querySelectorAll(".dot").forEach((b, i) => b.setAttribute("aria-current", i === S.index)); }
 
@@ -506,135 +305,77 @@
     lastFocus && lastFocus.focus && lastFocus.focus();
   }
 
-  // ---------- rating ----------
-  function ratePanelInner(d) {
-    const mine = myScore(d.id);
-    const fav = myFavorite() === d.id;
+  // ---------- picking ----------
+  function pickPanelInner(d) {
+    const r = rankOf(d.id);
     return `
-      <div class="rate-panel">
-        <div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline">
-          <b>${S.name ? `${esc(S.name)}, how excited are you?` : "Your rating"}</b>
-          ${mine ? `<button class="link-btn" data-clear="${d.id}">Clear my rating</button>` : ""}
+      <div class="pick-panel">
+        <div class="pick-row" role="group" aria-label="Rank ${esc(d.name)} in your top 3">
+          ${[1, 2, 3].map((n) => {
+            const holder = S.top3[n - 1];
+            return `<button class="pick-btn" data-rank="${n}" aria-pressed="${r === n}">
+              <span class="medal">${MEDALS[n - 1]}</span><b>#${n}</b>
+              <small>${holder && holder !== d.id ? esc(byId[holder].name) : r === n ? "This one" : "Open"}</small>
+            </button>`;
+          }).join("")}
         </div>
-        <div class="scale" role="radiogroup" aria-label="Rate ${esc(d.name)} from 1 to 10">
-          ${Array.from({ length: 10 }, (_, i) => i + 1).map((n) => `<button role="radio" aria-checked="${mine === n}" data-score="${n}" aria-label="${n}${n === 1 ? " — not interested" : n === 10 ? " — would love to go" : ""}">${n}</button>`).join("")}
-        </div>
-        <div class="scale-labels"><span>1 = not interested</span><span>10 = would love to go</span></div>
-        <div class="rate-status" data-status>${mine ? `Saved: <b>${mine}/10</b>. Tap another number to change it.` : (STATIC ? "Not rated yet." : "Not rated yet. Unrated places don't count toward the average.")}</div>
-        <div class="fav-toggle">
-          <span>${fav ? "♥ This is your favorite." : "Is this your #1 pick? (one favorite per person)"}</span>
-          <button class="btn ${fav ? "fav-on" : "btn-ghost"}" data-fav="${d.id}" aria-pressed="${fav}">${fav ? "♥ My favorite" : "♡ Make favorite"}</button>
-        </div>
+        ${r ? `<button class="link-btn" data-rank="0">Remove from my top 3</button>` : `<p class="note" style="margin:6px 0 0">Tap a slot. If it's taken, this place replaces it.</p>`}
       </div>`;
   }
+  function bindPickPanel(root) {
+    const id = root.dataset.pickpanel;
+    root.querySelectorAll("[data-rank]").forEach((b) => (b.onclick = () => setPick(id, +b.dataset.rank)));
+  }
 
-  function summaryInner(d) {
-    if (STATIC) return shareBox();
-    const st = statsFor(d.id);
+  function top3ListInner() {
     return `
-      <div class="avg-big"><b>${st.count ? st.avg.toFixed(1) : "—"}</b><span class="muted">${st.count ? `average of ${st.count} rating${st.count > 1 ? "s" : ""}` : "no ratings yet"}${st.favs ? ` · ♥ favorite of ${st.favNames.map(esc).join(", ")}` : ""}</span></div>
-      ${st.rows.length ? `<ul class="people-list">${st.rows.map((r) => `<li><span class="avatar">${esc(initials(r.name))}</span><span style="min-width:84px">${esc(r.name)}</span><span class="bar"><i style="width:${r.score * 10}%"></i></span><b>${r.score}</b></li>`).join("")}</ul>` : ""}`;
+      <ol class="top3-list">${S.top3.map((id, i) => `
+        <li><span class="medal">${MEDALS[i]}</span>${id ? `<button class="link-btn" data-goto="${id}">${esc(byId[id].name)}</button>` : `<span class="muted">Not picked yet</span>`}</li>`).join("")}
+      </ol>
+      <div class="share-box">
+        <span class="note">Your picks are saved on this phone or computer. Send them to the family:</span>
+        <button class="btn btn-primary btn-sm" data-share>Share my top 3</button>
+      </div>`;
+  }
+  function bindTop3List(root) {
+    root.querySelectorAll("[data-share]").forEach((b) => (b.onclick = shareTop3));
+    root.querySelectorAll("[data-goto]").forEach((b) => (b.onclick = () => { const ov = b.closest(".overlay"); if (ov && !ov.querySelector("#dTitle")) closeOverlay(ov); openDetail(b.dataset.goto); }));
   }
 
-  function bindLive(root, d) {
-    root.querySelectorAll("[data-score]").forEach((b) => (b.onclick = () => requireName(() => saveRating(d, +b.dataset.score, root))));
-    root.querySelectorAll("[data-clear]").forEach((b) => (b.onclick = () => saveRating(d, null, root)));
-    root.querySelectorAll("[data-fav]").forEach((b) => (b.onclick = () => requireName(() => toggleFav(d, root))));
-    root.querySelectorAll("[data-share]").forEach((b) => (b.onclick = () => shareRatings()));
-    root.querySelectorAll("[data-del]").forEach((b) => (b.onclick = () => deleteComment(b.dataset.del)));
-    const form = root.querySelector("[data-cform]");
-    if (form) bindCommentForm(form, d);
-  }
-
-  async function saveRating(d, score, root) {
-    const st = root.querySelector("[data-status]");
-    root.querySelectorAll("[data-score]").forEach((b) => (b.disabled = true));
-    if (st) st.innerHTML = `<span class="spinner sm"></span> Saving…`;
-    const prev = myScore(d.id);
-    const ok = await mutate("/api/rating", "PUT", { name: S.name, destId: d.id, score },
-      score === null ? `Cleared your rating for ${d.name}.` : prev ? `Updated: ${d.name} ${prev} → ${score}/10` : `Saved: ${d.name} ${score}/10`);
-    if (!ok) { root.querySelectorAll("[data-score]").forEach((b) => (b.disabled = false)); if (st) st.textContent = "Not saved — try again."; }
-  }
-
-  async function toggleFav(d) {
-    const isFav = myFavorite() === d.id;
-    await mutate("/api/favorite", "PUT", { name: S.name, destId: isFav ? null : d.id }, isFav ? "Favorite removed." : `♥ ${d.name} is your favorite.`);
-  }
-
-  function openRate(id) {
+  function openPick(id) {
     const d = byId[id];
     const ov = overlay(`
-      <div class="sheet small" role="dialog" aria-modal="true" aria-labelledby="rateTitle">
-        <div class="sheet-head"><h3 id="rateTitle">Rate ${esc(d.name)}</h3><button class="icon-btn" data-close aria-label="Close">×</button></div>
+      <div class="sheet small" role="dialog" aria-modal="true" aria-labelledby="pickTitle">
+        <div class="sheet-head"><h3 id="pickTitle">${esc(d.name)} in your top 3?</h3><button class="icon-btn" data-close aria-label="Close">×</button></div>
         <div class="sheet-body" style="padding-top:14px">
-          <div data-live="rate:${d.id}">${ratePanelInner(d)}</div>
-          <div style="margin-top:16px" data-live="summary:${d.id}">${summaryInner(d)}</div>
-          <button class="btn btn-ghost btn-block" style="margin-top:16px" data-openfrom="${d.id}">See full details</button>
+          <div data-pickpanel="${d.id}">${pickPanelInner(d)}</div>
+          <h4 style="margin:18px 0 6px">Your top 3</h4>
+          <div data-top3list>${top3ListInner()}</div>
         </div>
       </div>`);
-    ov.querySelectorAll("[data-live]").forEach((el) => bindLive(el, d));
-    $("[data-openfrom]", ov).onclick = () => { closeOverlay(ov); openDetail(d.id); };
-    setTimeout(() => ov.querySelector("[data-score]")?.focus(), 50);
+    ov.querySelectorAll("[data-pickpanel]").forEach(bindPickPanel);
+    ov.querySelectorAll("[data-top3list]").forEach(bindTop3List);
+    setTimeout(() => ov.querySelector(".pick-btn")?.focus(), 50);
   }
 
-  // ---------- comments ----------
-  function commentsInner(d) {
-    const cs = commentsFor(d.id);
-    return `
-      ${cs.length ? cs.map((c) => `
-        <div class="comment">
-          <span class="avatar">${esc(initials(c.name))}</span>
-          <div><span class="who">${esc(c.name)}</span>${c.kind === "question" ? `<span class="q-badge">Question</span>` : ""}<span class="when">${esc(fmtWhen(c.created_at))}</span>
-            ${c.person_id === meId() ? ` · <button class="link-btn" style="font-size:12px" data-del="${esc(c.id)}">delete</button>` : ""}
-            <p>${esc(c.body)}</p></div>
-        </div>`).join("") : `<p class="note">No notes yet. Start the conversation — thoughts, concerns, questions for the group.</p>`}
-      <form class="comment-form" data-cform>
-        <div class="seg" role="group" aria-label="Type of note">
-          <button type="button" data-kind="feedback" aria-pressed="${S.commentKind === "feedback"}">Feedback</button>
-          <button type="button" data-kind="question" aria-pressed="${S.commentKind === "question"}">Question</button>
+  function openTop3() {
+    const ov = overlay(`
+      <div class="sheet small" role="dialog" aria-modal="true" aria-labelledby="t3Title">
+        <div class="sheet-head"><h3 id="t3Title">🏆 My top 3</h3><button class="icon-btn" data-close aria-label="Close">×</button></div>
+        <div class="sheet-body" style="padding-top:10px">
+          <div data-top3list>${top3ListInner()}</div>
+          ${pickedCount() < 3 ? `<p class="note">Browse the places and tap <b>Pick</b> to fill your slots.</p>` : ""}
+          ${S.name ? `<p class="note">Sharing as ${esc(S.name)} · <button class="link-btn" id="chgName">change</button></p>` : ""}
         </div>
-        <label class="sr-only" for="c-${d.id}">Your note</label>
-        <textarea class="input" id="c-${d.id}" maxlength="1500" placeholder="${S.commentKind === "question" ? "Ask the group something…" : "What do you think about this one?"}"></textarea>
-        <button class="btn btn-primary">Post ${S.commentKind === "question" ? "question" : "note"}</button>
-      </form>`;
-  }
-
-  function bindCommentForm(form, d) {
-    form.querySelectorAll("[data-kind]").forEach((b) => (b.onclick = () => {
-      S.commentKind = b.dataset.kind;
-      form.querySelectorAll("[data-kind]").forEach((x) => x.setAttribute("aria-pressed", x === b));
-      form.querySelector("textarea").placeholder = S.commentKind === "question" ? "Ask the group something…" : "What do you think about this one?";
-      form.querySelector("button.btn").textContent = `Post ${S.commentKind === "question" ? "question" : "note"}`;
-    }));
-    form.onsubmit = (e) => {
-      e.preventDefault();
-      const ta = form.querySelector("textarea");
-      const text = ta.value.trim();
-      if (!text) { ta.focus(); return; }
-      requireName(async () => {
-        const btn = form.querySelector("button.btn");
-        btn.disabled = true; btn.innerHTML = `<span class="spinner sm"></span> Posting…`;
-        const draft = text;
-        const ok = await mutate("/api/comment", "POST", { name: S.name, destId: d.id, body: draft, kind: S.commentKind }, "Posted for everyone to see.");
-        if (ok) {
-          document.querySelectorAll(`[data-live="comments:${d.id}"] textarea`).forEach((x) => (x.value = ""));
-        } else {
-          btn.disabled = false; btn.textContent = "Post";
-          ta.value = draft;
-        }
-      });
-    };
-  }
-
-  async function deleteComment(id) {
-    if (!confirm("Delete this note?")) return;
-    await mutate(`/api/comment/${encodeURIComponent(id)}`, "DELETE", { name: S.name }, "Deleted.");
+      </div>`);
+    ov.querySelectorAll("[data-top3list]").forEach(bindTop3List);
+    const c = $("#chgName", ov); if (c) c.onclick = () => askName();
   }
 
   // ---------- detail sheet ----------
-  function galleryHTML(photos, group) {
+  function galleryHTML(photos) {
     return `<div class="gallery">${photos.map((p, i) => `
-      <figure><button data-lb="${group}" data-i="${i}" aria-label="Open photo: ${esc(p.caption)}"><img loading="lazy" src="${esc(p.url)}" alt="${esc(p.caption)}" /></button>
+      <figure><button data-lb="D" data-i="${i}" aria-label="Open photo: ${esc(p.caption)}"><img loading="lazy" src="${esc(p.url)}" alt="${esc(p.caption)}" /></button>
       <figcaption>${esc(p.caption)}<small class="credit-line">${esc(p.credit.replace("Photo: ", "© ").replace(" / Wikimedia Commons", ""))}${p.license ? ` · ${esc(p.license)}` : ""}</small></figcaption></figure>`).join("")}</div>`;
   }
 
@@ -665,6 +406,7 @@
 
   function openDetail(id) {
     const d = byId[id];
+    const photos = d.photos.filter((p) => p.url !== d.hero.url);
     const days = [["Tue", d.plan.tue], ["Wed", d.plan.wed], ["Thu", d.plan.thu], ["Fri", d.plan.fri], ["☔", d.rainy]];
     const ov = overlay(`
       <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="dTitle">
@@ -677,6 +419,7 @@
           </div>
         </div>
         <div class="sheet-body">
+          <p class="lede vibe">${esc(d.vibeShort)}</p>
           <div class="stat-strip">
             <div><small>Travel</small><b>${esc(d.stat.travel)}</b></div>
             <div><small>High / low</small><b>${esc(d.stat.temps)}</b></div>
@@ -684,7 +427,7 @@
             <div><small>Lodging</small><b>${esc(costRange(d))}</b></div>
           </div>
 
-          ${galleryHTML(d.photos.filter((p) => p.url !== d.hero.url), "D")}
+          ${galleryHTML(photos)}
 
           <div class="chips">
             ${d.vibes.map((v) => `<span class="vchip">${esc(v)}</span>`).join("")}
@@ -697,24 +440,22 @@
             <div class="plan">${days.map(([a, b]) => `<div><b>${a}</b><span>${esc(b)}</span></div>`).join("")}</div>
           </section>
 
-          <section class="section tight" id="s-rentals"><h3>${d.listings.length ? "Places to stay" : "Where we'd stay"}</h3>
-            ${d.listings.length ? `<p class="sub">All open Nov 24–27 for 3 adults · 3-night totals incl. fees, before taxes · checked ${esc(new Date(TRIP.checkedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" }))}</p>${d.listings.map(listingHTML).join("")}` : `<div class="box">${esc(d.lodgingNote)}</div>`}
+          <section class="section tight"><h3>${d.listings.length ? "Places to stay" : "Where we'd stay"}</h3>
+            ${d.listings.length ? `<p class="sub">All open Nov 24–27 for 3 adults · 3-night totals incl. fees, before taxes · checked ${esc(shortDate(TRIP.checkedAt))}</p>${d.listings.map(listingHTML).join("")}` : `<div class="box">${esc(d.lodgingNote)}</div>`}
           </section>
 
-          <section class="section tight" id="s-rate"><h3>${STATIC ? "Your rating" : "Ratings"}</h3>
-            <div data-live="rate:${d.id}">${ratePanelInner(d)}</div>
-            <div class="${STATIC ? "" : "box"}" style="margin-top:12px" data-live="summary:${d.id}">${summaryInner(d)}</div>
+          <section class="section tight"><h3>In your top 3?</h3>
+            <div data-pickpanel="${d.id}">${pickPanelInner(d)}</div>
           </section>
-          ${STATIC ? "" : `<section class="section" id="s-talk"><h3>Discussion</h3><div data-live="comments:${d.id}">${commentsInner(d)}</div></section>`}
         </div>
       </div>`);
-    ov.querySelectorAll("[data-live]").forEach((el) => bindLive(el, d));
+    ov.querySelectorAll("[data-pickpanel]").forEach(bindPickPanel);
     ov.addEventListener("click", (e) => {
       const b = e.target.closest("[data-lb]");
       if (!b) return;
       const g = b.dataset.lb;
       const l = d.listings.find((x) => "L-" + x.id === g);
-      const set = g === "D" ? d.photos.filter((p) => p.url !== d.hero.url) : l.photos.map((p) => ({ ...p, credit: "Listing photo via Airbnb", source: l.url }));
+      const set = g === "D" ? photos : l.photos.map((p) => ({ ...p, credit: "Listing photo via Airbnb", source: l.url }));
       lightbox(set, +b.dataset.i);
     });
     setTimeout(() => $("[data-close]", ov).focus(), 50);
@@ -758,67 +499,41 @@
 
   // ---------- compare ----------
   function renderCompare(v) {
-    const list = filtered().map((d) => ({ d, st: statsFor(d.id) }));
+    const list = filtered();
     const sorters = {
-      mine: (a, b) => (myScore(b.d.id) ?? -1) - (myScore(a.d.id) ?? -1),
-      avg: (a, b) => (b.st.avg ?? -1) - (a.st.avg ?? -1) || b.st.favs - a.st.favs,
-      favs: (a, b) => b.st.favs - a.st.favs || (b.st.avg ?? -1) - (a.st.avg ?? -1),
-      cost: (a, b) => minTotal(a.d) - minTotal(b.d),
+      mine: (a, b) => (rankOf(a.id) || 9) - (rankOf(b.id) || 9),
+      cost: (a, b) => minTotal(a) - minTotal(b),
     };
     list.sort(sorters[S.sort]);
-    const people = S.data?.people || [];
-    const ratedPeople = people.filter((p) => S.data.ratings.some((r) => r.person_id === p.id));
     v.innerHTML = `${filterBar()}
       <div class="sort-row"><span class="filter-label">Sort by</span>
-        ${(STATIC ? [["mine", "My rating"], ["cost", "Lodging cost"]] : [["avg", "Average rating"], ["favs", "Favorites"], ["cost", "Lodging cost"]]).map(([k, l]) => `<button class="chip" data-sort="${k}" aria-pressed="${S.sort === k}">${l}</button>`).join("")}
+        ${[["mine", "My top 3"], ["cost", "Lodging cost"]].map(([k, l]) => `<button class="chip" data-sort="${k}" aria-pressed="${S.sort === k}">${l}</button>`).join("")}
       </div>
-      ${STATIC ? `<div style="margin-bottom:14px">${shareBox()}</div>` : ""}
-      ${!S.data ? `<div class="empty"><div class="spinner"></div><p>Loading everyone's ratings…</p></div>` : ""}
-      <div class="compare-grid">${list.map(({ d, st }, i) => `
+      <div class="box" style="margin-bottom:14px" data-top3list>${top3ListInner()}</div>
+      <div class="compare-grid">${list.map((d) => `
         <article class="cmp">
-          <div class="cmp-photo" style="background-image:url('${esc(d.hero.url)}')" role="img" aria-label="${esc(d.hero.caption)}">${S.sort !== "cost" && (STATIC ? myScore(d.id) : st.count) ? `<span class="rank">#${i + 1}</span>` : ""}</div>
+          <div class="cmp-photo" style="background-image:url('${esc(d.hero.url)}')" role="img" aria-label="${esc(d.hero.caption)}">${rankOf(d.id) ? `<span class="rank">${MEDALS[rankOf(d.id) - 1]} #${rankOf(d.id)}</span>` : ""}</div>
           <div class="cmp-body">
             <div><div class="card-kicker" style="color:var(--rust)">${esc(d.personality)}</div><h3>${esc(d.name)}</h3></div>
-            ${STATIC ? `<div class="cmp-stats">
-              <div><b>${myScore(d.id) ?? "—"}</b><small>My rating</small></div>
-              <div><b>${myFavorite() === d.id ? "♥" : "—"}</b><small>Favorite</small></div>
-              <div><b style="font-size:16px;line-height:1.6">${esc(costRange(d))}</b><small>Lodging</small></div>
-            </div>` : `<div class="cmp-stats">
-              <div><b>${st.count ? st.avg.toFixed(1) : "—"}</b><small>Average</small></div>
-              <div><b>${st.count}</b><small>Rated</small></div>
-              <div><b>${st.favs}</b><small>♥ Favs</small></div>
-            </div>`}
             <dl class="kv">
-              ${STATIC ? "" : `<dt>Ratings</dt><dd>${st.rows.length ? st.rows.map((r) => `${esc(r.name)} <b>${r.score}</b>`).join(" · ") : '<span class="muted">none yet</span>'}</dd>`}
               <dt>Lodging</dt><dd>${esc(costRange(d))} for 3 nights</dd>
               <dt>Travel</dt><dd>${esc(d.stat.travel)}</dd>
               <dt>Weather</dt><dd>${esc(d.stat.temps)} · ${esc(d.stat.sky)}</dd>
             </dl>
             <div style="display:flex;gap:8px;margin-top:auto">
               <button class="btn btn-ghost" style="flex:1" data-open="${d.id}">Details</button>
-              <button class="btn btn-primary" style="flex:1" data-rate="${d.id}">${myScore(d.id) ? `You: ${myScore(d.id)} · edit` : "Rate"}</button>
+              <button class="btn btn-primary" style="flex:1" data-pick="${d.id}">${pickLabel(d.id)}</button>
             </div>
           </div>
         </article>`).join("")}</div>
-      ${S.data && !STATIC ? `<div class="table-wrap"><table class="matrix">
-        <caption class="sr-only">Every person's rating for every destination</caption>
-        <thead><tr><th>Destination</th>${ratedPeople.map((p) => `<th>${esc(p.name)}</th>`).join("")}<th>Avg</th><th>♥</th></tr></thead>
-        <tbody>${list.map(({ d, st }) => `<tr><td><b>${esc(d.name)}</b></td>${ratedPeople.map((p) => { const r = st.rows.find((x) => x.id === p.id); return `<td>${r ? r.score : '<span class="muted">–</span>'}${p.favorite === d.id ? " ♥" : ""}</td>`; }).join("")}<td><b>${st.count ? st.avg.toFixed(1) : "—"}</b></td><td>${st.favs || ""}</td></tr>`).join("")}</tbody>
-      </table></div>
-      <p class="footer-note">“–” means not rated yet; averages only include people who rated that place.</p>` : ""}
       <p class="footer-note">v${esc(TRIP.version)}</p>`;
     bindFilters(v);
-    v.querySelectorAll("[data-share]").forEach((b) => (b.onclick = () => shareRatings()));
+    v.querySelectorAll("[data-top3list]").forEach(bindTop3List);
     v.querySelectorAll("[data-sort]").forEach((b) => (b.onclick = () => { S.sort = b.dataset.sort; renderView(); }));
     v.querySelectorAll("[data-open]").forEach((b) => (b.onclick = () => openDetail(b.dataset.open)));
-    v.querySelectorAll("[data-rate]").forEach((b) => (b.onclick = () => requireName(() => openRate(b.dataset.rate))));
+    v.querySelectorAll("[data-pick]").forEach((b) => (b.onclick = () => openPick(b.dataset.pick)));
   }
-  const minTotal = (d) => (d.listings.length ? Math.min(...d.listings.map((l) => l.total)) : 0);
 
   // ---------- boot ----------
   render();
-  if (!STATIC) {
-    setInterval(() => { if (S.code && !document.hidden) refresh({ quiet: true }); }, POLL_MS);
-    document.addEventListener("visibilitychange", () => { if (!document.hidden && S.code) refresh({ quiet: true }); });
-  }
 })();
