@@ -136,7 +136,7 @@
       ov.querySelector("textarea").select();
     }
   }
-  const shareBox = () => `<div class="box"><b>Your ratings are saved on this device only.</b><p class="note" style="margin:4px 0 10px">This page has no shared database, so send your scores to the family when you're done.</p><button class="btn btn-primary" data-share>Share my ratings</button></div>`;
+  const shareBox = () => `<div class="box share-box"><span>Ratings stay on this device. Send yours to the family:</span><button class="btn btn-primary btn-sm" data-share>Share my ratings</button></div>`;
 
   async function sheetsApi(path, opts) {
     const body = { ...(opts.body || {}), code: S.code || "" };
@@ -373,9 +373,9 @@
           <div class="dots" role="tablist">${list.map((d, i) => `<button class="dot" data-i="${i}" aria-label="${esc(d.name)}" aria-current="${i === S.index}"></button>`).join("")}</div>
           <button class="icon-btn" id="nextBtn" aria-label="Next destination">›</button>
         </div>
-        <p class="deck-help">Swipe or use the arrows to browse · rating is separate — tap <b>Rate</b> when you're ready.</p>
+        <p class="deck-help">Swipe to browse · tap <b>Rate</b> to score</p>
       </div>` : `<div class="empty">No destinations match those filters. <button class="link-btn" id="clearF">Clear filters</button></div>`}
-      <p class="footer-note">Rental prices and availability checked ${esc(fmtChecked(TRIP.checkedAt))}. Nothing is booked. · Version ${esc(TRIP.version)}</p>`;
+      <p class="footer-note">Prices checked ${esc(new Date(TRIP.checkedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" }))} · nothing booked · v${esc(TRIP.version)}</p>`;
     bindFilters(v);
     const cf = $("#clearF"); if (cf) cf.onclick = () => { S.filters = { setting: "all", access: "all" }; renderView(); };
     if (!list.length) return;
@@ -520,7 +520,7 @@
           ${Array.from({ length: 10 }, (_, i) => i + 1).map((n) => `<button role="radio" aria-checked="${mine === n}" data-score="${n}" aria-label="${n}${n === 1 ? " — not interested" : n === 10 ? " — would love to go" : ""}">${n}</button>`).join("")}
         </div>
         <div class="scale-labels"><span>1 = not interested</span><span>10 = would love to go</span></div>
-        <div class="rate-status" data-status>${mine ? `Saved: <b>${mine}/10</b>. Tap another number to change it.` : (STATIC ? "Not rated yet." : "Not rated yet — unrated places don't count toward the average.")}</div>
+        <div class="rate-status" data-status>${mine ? `Saved: <b>${mine}/10</b>. Tap another number to change it.` : (STATIC ? "Not rated yet." : "Not rated yet. Unrated places don't count toward the average.")}</div>
         <div class="fav-toggle">
           <span>${fav ? "♥ This is your favorite." : "Is this your #1 pick? (one favorite per person)"}</span>
           <button class="btn ${fav ? "fav-on" : "btn-ghost"}" data-fav="${d.id}" aria-pressed="${fav}">${fav ? "♥ My favorite" : "♡ Make favorite"}</button>
@@ -635,39 +635,29 @@
   function galleryHTML(photos, group) {
     return `<div class="gallery">${photos.map((p, i) => `
       <figure><button data-lb="${group}" data-i="${i}" aria-label="Open photo: ${esc(p.caption)}"><img loading="lazy" src="${esc(p.url)}" alt="${esc(p.caption)}" /></button>
-      <figcaption>${esc(p.caption)}<small>${esc(p.credit)}${p.license ? ` · ${esc(p.license)}` : ""}</small></figcaption></figure>`).join("")}</div>`;
+      <figcaption>${esc(p.caption)}<small class="credit-line">${esc(p.credit.replace("Photo: ", "© ").replace(" / Wikimedia Commons", ""))}${p.license ? ` · ${esc(p.license)}` : ""}</small></figcaption></figure>`).join("")}</div>`;
   }
 
-  function listingHTML(l, d) {
-    const perNight = l.total / 3;
+  function listingHTML(l) {
+    const rooms = l.rooms.replace(/ bedrooms?/, " BR");
     return `<article class="listing">
-      <div class="listing-photos">${l.photos.map((p, i) => `<figure><button style="all:unset;cursor:zoom-in;display:block" data-lb="L-${l.id}" data-i="${i}" aria-label="Open listing photo"><img loading="lazy" src="${esc(p.url)}" alt="${esc(p.caption || l.name)}" /></button>${p.caption ? `<figcaption>${esc(p.caption)}</figcaption>` : ""}</figure>`).join("")}</div>
+      <div class="listing-photos">${l.photos.map((p, i) => `<figure><button style="all:unset;cursor:zoom-in;display:block" data-lb="L-${l.id}" data-i="${i}" aria-label="Open listing photo"><img loading="lazy" src="${esc(p.url)}" alt="${esc(p.caption || l.name)}" /></button></figure>`).join("")}</div>
       <div class="listing-body">
-        <div class="badges">
-          <span class="badge">✓ Available Nov 24–27 for 3 adults</span>
-          ${l.freeCancel ? `<span class="badge">Free cancellation offered</span>` : `<span class="badge gray">Check cancellation terms</span>`}
-          ${l.discount ? `<span class="badge warn">${esc(l.discount)}</span>` : ""}
-          ${l.tier ? `<span class="badge gray">${esc(l.tier)}</span>` : ""}
-          ${l.total < 1000 && l.tier !== "Under $1k" ? `<span class="badge gray">Under $1k</span>` : ""}
+        <div class="listing-top">
+          <div>
+            <h4>${esc(l.name)}</h4>
+            <div class="listing-meta">${esc(l.location)} · ★ ${esc(l.rating)}</div>
+          </div>
+          <div class="listing-price"><b>${money(l.total)}</b><small>${money(l.total / 3)}/night</small></div>
         </div>
-        <h4>${esc(l.name)}</h4>
-        <div class="listing-meta">${esc(l.type)} · ${esc(l.location)} · ★ ${esc(l.rating)}</div>
-        <div class="price-grid">
-          <div><small>3-night total</small><b>${money(l.total)}</b></div>
-          <div><small>Avg / night</small><b>${money(perNight)}</b></div>
-        </div>
-        <p class="note" style="margin-top:-4px">Exact quote ${money2(l.total)} for Nov 24–27, 3 adults. ${esc(TRIP.taxNote)}</p>
-        <dl class="kv">
-          <dt>Sleeps</dt><dd>Up to ${l.guests} guests · ${esc(l.rooms)}</dd>
-          <dt>Sleeping setup</dt><dd>${esc(l.sleeping)}</dd>
-          <dt>Why it fits</dt><dd>${esc(l.why)}</dd>
-          <dt>Minimum stay</dt><dd>${esc(TRIP.minStayNote)}</dd>
-          <dt>Cancellation</dt><dd>${l.freeCancel ? "Airbnb shows a free-cancellation option for these dates; the deadline and refund terms appear at checkout." : "No free-cancellation badge for these dates — read the policy on the listing before booking."}</dd>
-          <dt>Checked</dt><dd>${esc(fmtChecked(l.checkedAt))}</dd>
-        </dl>
-        ${l.amenities.length ? `<details class="more"><summary>Amenities (${l.amenities.length})</summary><div class="amen">${l.amenities.map((a) => `<span>${esc(a)}</span>`).join("")}</div></details>` : ""}
-        <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
-          <a class="btn btn-primary" href="${esc(l.url)}" target="_blank" rel="noopener">View on Airbnb ↗</a>
+        <div class="listing-meta">${esc(rooms)} · ${esc(l.sleepTag)}</div>
+        <div class="listing-foot">
+          <div class="badges">
+            ${l.total < 1000 ? `<span class="badge">Under $1k</span>` : ""}
+            ${l.freeCancel ? `<span class="badge">Free cancellation</span>` : ""}
+            ${l.discount ? `<span class="badge warn">${esc(l.discount.replace("Discounted from", "was"))}</span>` : ""}
+          </div>
+          <a class="btn btn-ghost btn-sm" href="${esc(l.url)}" target="_blank" rel="noopener">Airbnb ↗</a>
         </div>
       </div>
     </article>`;
@@ -675,69 +665,56 @@
 
   function openDetail(id) {
     const d = byId[id];
-    const t = d.travel;
+    const days = [["Tue", d.plan.tue], ["Wed", d.plan.wed], ["Thu", d.plan.thu], ["Fri", d.plan.fri], ["☔", d.rainy]];
     const ov = overlay(`
       <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="dTitle">
-        <div class="sheet-head"><h3>${esc(d.personality)}</h3><div style="display:flex;gap:8px"><button class="btn btn-primary" data-jumprate style="padding:9px 14px">${myScore(d.id) ? "Update rating" : "Rate"}</button><button class="icon-btn" data-close aria-label="Close">×</button></div></div>
+        <div class="detail-hero2" style="background-image:url('${esc(d.hero.url)}')" role="img" aria-label="${esc(d.hero.caption)}">
+          <button class="icon-btn hero-close" data-close aria-label="Close">×</button>
+          <div class="hero-text">
+            <div class="card-kicker">${esc(d.region)}</div>
+            <h2 id="dTitle">${esc(d.name)}</h2>
+            <p>${esc(d.tagline)}</p>
+          </div>
+        </div>
         <div class="sheet-body">
-          <div class="detail-hero" style="background-image:url('${esc(d.hero.url)}')" role="img" aria-label="${esc(d.hero.caption)}"><span class="credit">${esc(d.hero.caption)} · ${esc(d.hero.credit)}</span></div>
-          <div class="detail-title"><div class="kicker">${esc(d.region)}</div><h2 id="dTitle">${esc(d.name)}</h2></div>
-          <p class="lede">${esc(d.vibe)}</p>
-          <nav class="jump" aria-label="Sections">
-            <a href="#s-photos">Photos</a><a href="#s-stay">Where to stay</a><a href="#s-travel">Getting there</a><a href="#s-weather">Weather</a><a href="#s-plan">Itinerary</a><a href="#s-rentals">${d.listings.length ? "Rentals" : "Lodging"}</a><a href="#s-rate">${STATIC ? "Your rating" : "Ratings"}</a>${STATIC ? "" : `<a href="#s-talk">Discussion</a>`}
-          </nav>
+          <div class="stat-strip">
+            <div><small>Travel</small><b>${esc(d.stat.travel)}</b></div>
+            <div><small>High / low</small><b>${esc(d.stat.temps)}</b></div>
+            <div><small>Weather</small><b>${esc(d.stat.sky)}</b></div>
+            <div><small>Lodging</small><b>${esc(costRange(d))}</b></div>
+          </div>
 
-          <section class="section" id="s-photos"><h3>The place</h3><p class="sub">Swipe the strip; tap a photo for full screen. Real photos with source credits.</p>${galleryHTML(d.photos, "D")}</section>
+          ${galleryHTML(d.photos.filter((p) => p.url !== d.hero.url), "D")}
 
-          <section class="section"><div class="cols two">
-            <div class="box"><h4 class="tag-good">Highlights</h4><ul>${d.highlights.map((h) => `<li>${esc(h)}</li>`).join("")}</ul></div>
-            <div class="box"><h4 class="tag-warn">Tradeoffs</h4><ul>${d.tradeoffs.map((h) => `<li>${esc(h)}</li>`).join("")}</ul></div>
-          </div></section>
+          <div class="chips">
+            ${d.vibes.map((v) => `<span class="vchip">${esc(v)}</span>`).join("")}
+            ${d.cons.map((v) => `<span class="vchip con">${esc(v)}</span>`).join("")}
+          </div>
 
-          <section class="section" id="s-stay"><h3>Where to stay</h3><div class="cols two">${d.stayAreas.map((a) => `<div class="box"><h4>${esc(a.name)}</h4><p style="margin:0">${esc(a.why)}</p></div>`).join("")}</div></section>
+          <p class="travel-line">${d.access.includes("fly") ? "✈️" : "🚗"} ${esc(d.travelLine)}<small>${esc(d.travelNote)}</small></p>
 
-          <section class="section" id="s-travel"><h3>Getting there</h3>
-            ${t.drive ? `<div class="box" style="margin-bottom:12px"><h4>🚗 ${esc(t.drive.heading || "Driving together from Kings Beach")}</h4><dl class="kv"><dt>Distance</dt><dd>${esc(t.drive.distance)}</dd><dt>Time</dt><dd>${esc(t.drive.time)}</dd><dt>Route</dt><dd>${esc(t.drive.route)}</dd></dl><p class="note" style="margin-bottom:0">${esc(t.drive.notes)}</p></div>` : ""}
-            ${t.flights?.length ? `<div class="box" style="margin-bottom:12px"><h4>✈️ Flying ${t.flightsFor ? esc(t.flightsFor) : ""}</h4>
-              <div class="table-wrap" style="margin-top:6px;border-radius:12px"><table class="matrix flights" style="min-width:520px"><thead><tr><th>Route</th><th>Nonstop?</th><th>Flight time</th><th>On our dates</th></tr></thead><tbody>
-              ${t.flights.map((f) => `<tr><td><b>${esc(f.route)}</b>${f.carriers ? `<br><span class="note">${esc(f.carriers)}</span>` : ""}</td><td data-l="Nonstop">${esc(f.nonstop)}</td><td data-l="Time">${esc(f.time)}</td><td data-l="Our dates" style="text-align:left">${esc(f.dates)}</td></tr>`).join("")}
-              </tbody></table></div>
-              ${t.airportDrive ? `<p style="margin:10px 0 0"><b>From the airport:</b> ${esc(t.airportDrive)}</p>` : ""}
-            </div>` : ""}
-            ${t.notes?.length ? `<ul class="note" style="padding-left:18px">${t.notes.map((n) => `<li>${esc(n)}</li>`).join("")}</ul>` : ""}
+          <section class="section tight"><h3>The plan</h3>
+            <div class="plan">${days.map(([a, b]) => `<div><b>${a}</b><span>${esc(b)}</span></div>`).join("")}</div>
           </section>
 
-          <section class="section" id="s-weather"><h3>Late-November weather</h3>
-            <div class="cols two"><div class="box"><dl class="kv"><dt>Typical high</dt><dd>${esc(d.weather.high)}</dd><dt>Typical low</dt><dd>${esc(d.weather.low)}</dd><dt>Rain</dt><dd>${esc(d.weather.rain)}</dd><dt>Snow</dt><dd>${esc(d.weather.snow)}</dd></dl></div>
-            <div class="box"><p style="margin:0">${esc(d.weather.summary)}</p>${d.weather.source ? `<p class="note" style="margin:8px 0 0">Source: ${esc(d.weather.source)}</p>` : ""}</div></div>
+          <section class="section tight" id="s-rentals"><h3>${d.listings.length ? "Places to stay" : "Where we'd stay"}</h3>
+            ${d.listings.length ? `<p class="sub">All open Nov 24–27 for 3 adults · 3-night totals incl. fees, before taxes · checked ${esc(new Date(TRIP.checkedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" }))}</p>${d.listings.map(listingHTML).join("")}` : `<div class="box">${esc(d.lodgingNote)}</div>`}
           </section>
 
-          <section class="section" id="s-plan"><h3>A relaxed Tuesday–Friday</h3>
-            <div class="days">
-              ${[["Tue", "Nov 24", d.itinerary.tue], ["Wed", "Nov 25", d.itinerary.wed], ["Thu", "Thanksgiving", d.itinerary.thu], ["Fri", "Nov 27", d.itinerary.fri]].map(([a, b, c]) => `<div class="day"><div><b>${a}</b><small>${b}</small></div><div>${esc(c)}</div></div>`).join("")}
-              <div class="day" style="background:#F3EEE3"><div><b>☔</b><small>Rainy day</small></div><div>${esc(d.rainy)}</div></div>
-            </div>
+          <section class="section tight" id="s-rate"><h3>${STATIC ? "Your rating" : "Ratings"}</h3>
+            <div data-live="rate:${d.id}">${ratePanelInner(d)}</div>
+            <div class="${STATIC ? "" : "box"}" style="margin-top:12px" data-live="summary:${d.id}">${summaryInner(d)}</div>
           </section>
-
-          <section class="section" id="s-rentals"><h3>${d.listings.length ? "Verified rentals" : "Lodging"}</h3>
-            ${d.listings.length ? `<p class="sub">Each was confirmed bookable for the full Tue–Fri stay for 3 adults in a live dated Airbnb search, which also enforces minimum-night rules. Prices are Airbnb's live quotes at check time and can change.</p>${d.listings.map((l) => listingHTML(l, d)).join("")}` : `<div class="box">${esc(d.lodgingNote)}</div>`}
-          </section>
-
-          <section class="section" id="s-rate"><h3>${STATIC ? "Your rating" : "Ratings"}</h3>
-            <div class="cols two"><div data-live="rate:${d.id}">${ratePanelInner(d)}</div><div class="${STATIC ? "" : "box"}" data-live="summary:${d.id}">${summaryInner(d)}</div></div>
-          </section>
-
-          ${STATIC ? `<section class="section"><h3>Questions or thoughts?</h3><p style="margin:0">Send them in the family group chat. This page doesn't collect comments.</p></section>` : `<section class="section" id="s-talk"><h3>Discussion</h3><p class="sub">Feedback and questions are shared with everyone who has the invite link.</p><div data-live="comments:${d.id}">${commentsInner(d)}</div></section>`}
+          ${STATIC ? "" : `<section class="section" id="s-talk"><h3>Discussion</h3><div data-live="comments:${d.id}">${commentsInner(d)}</div></section>`}
         </div>
       </div>`);
     ov.querySelectorAll("[data-live]").forEach((el) => bindLive(el, d));
-    $("[data-jumprate]", ov).onclick = () => requireName(() => ov.querySelector("#s-rate").scrollIntoView({ behavior: "smooth" }));
-    ov.querySelectorAll(".jump a").forEach((a) => (a.onclick = (e) => { e.preventDefault(); ov.querySelector(a.getAttribute("href")).scrollIntoView({ behavior: "smooth" }); }));
     ov.addEventListener("click", (e) => {
       const b = e.target.closest("[data-lb]");
       if (!b) return;
       const g = b.dataset.lb;
-      const set = g === "D" ? d.photos : d.listings.find((l) => "L-" + l.id === g).photos.map((p) => ({ ...p, credit: "Listing photo via Airbnb", source: d.listings.find((l) => "L-" + l.id === g).url }));
+      const l = d.listings.find((x) => "L-" + x.id === g);
+      const set = g === "D" ? d.photos.filter((p) => p.url !== d.hero.url) : l.photos.map((p) => ({ ...p, credit: "Listing photo via Airbnb", source: l.url }));
       lightbox(set, +b.dataset.i);
     });
     setTimeout(() => $("[data-close]", ov).focus(), 50);
@@ -814,9 +791,8 @@
             <dl class="kv">
               ${STATIC ? "" : `<dt>Ratings</dt><dd>${st.rows.length ? st.rows.map((r) => `${esc(r.name)} <b>${r.score}</b>`).join(" · ") : '<span class="muted">none yet</span>'}</dd>`}
               <dt>Lodging</dt><dd>${esc(costRange(d))} for 3 nights</dd>
-              <dt>Travel</dt><dd>${esc(d.quick.travelLong)}</dd>
-              <dt>Weather</dt><dd>${esc(d.quick.weather)} · ${esc(d.weather.snowShort)}</dd>
-              <dt>Setting</dt><dd>${d.setting === "coast" ? "Coast" : "Mountains & forest"}</dd>
+              <dt>Travel</dt><dd>${esc(d.stat.travel)}</dd>
+              <dt>Weather</dt><dd>${esc(d.stat.temps)} · ${esc(d.stat.sky)}</dd>
             </dl>
             <div style="display:flex;gap:8px;margin-top:auto">
               <button class="btn btn-ghost" style="flex:1" data-open="${d.id}">Details</button>
@@ -830,7 +806,7 @@
         <tbody>${list.map(({ d, st }) => `<tr><td><b>${esc(d.name)}</b></td>${ratedPeople.map((p) => { const r = st.rows.find((x) => x.id === p.id); return `<td>${r ? r.score : '<span class="muted">–</span>'}${p.favorite === d.id ? " ♥" : ""}</td>`; }).join("")}<td><b>${st.count ? st.avg.toFixed(1) : "—"}</b></td><td>${st.favs || ""}</td></tr>`).join("")}</tbody>
       </table></div>
       <p class="footer-note">“–” means not rated yet; averages only include people who rated that place.</p>` : ""}
-      <p class="footer-note">Version ${esc(TRIP.version)}</p>`;
+      <p class="footer-note">v${esc(TRIP.version)}</p>`;
     bindFilters(v);
     v.querySelectorAll("[data-share]").forEach((b) => (b.onclick = () => shareRatings()));
     v.querySelectorAll("[data-sort]").forEach((b) => (b.onclick = () => { S.sort = b.dataset.sort; renderView(); }));
